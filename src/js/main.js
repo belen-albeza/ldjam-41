@@ -27,8 +27,16 @@ var PreloaderScene = {
     this.loadingBar.anchor.setTo(0, 0.5);
     this.load.setPreloadSprite(this.loadingBar);
 
-    // TODO: load here the assets for the game
-    this.game.load.image('logo', 'images/phaser.png');
+    // load maps
+    this.game.load.tilemap('map:00', 'data/sample.json', null, Phaser.Tilemap.TILED_JSON);
+
+    // load images
+    this.game.load.image('background', 'images/background.png');
+    this.game.load.image('chara', 'images/chara.png');
+    this.game.load.image('tileset', 'images/tileset.png');
+
+    // load audio
+    this.game.load.audio('sfx:walk', 'audio/walk.wav');
   },
 
   create: function () {

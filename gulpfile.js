@@ -56,7 +56,7 @@ gulp.task('dist', ['build'], function () {
     'index.html', 'raw.html',
     'styles.css',
     'fs-icon.svg',
-    'images/**/*', 'fonts/**/*', 'audio/**/*'
+    'images/**/*', 'fonts/**/*', 'audio/**/*', 'data/**/*'
   ], { cwd: './src', base: './src' })
     .pipe(gulp.dest('./dist/'));
 
