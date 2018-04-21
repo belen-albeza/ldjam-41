@@ -28,12 +28,14 @@ var PreloaderScene = {
     this.load.setPreloadSprite(this.loadingBar);
 
     // load maps
-    this.game.load.tilemap('map:00', 'data/sample.json', null, Phaser.Tilemap.TILED_JSON);
+    this.game.load.tilemap('map:00', 'data/area00.json', null,
+      Phaser.Tilemap.TILED_JSON);
 
     // load images
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('chara', 'images/chara.png');
     this.game.load.image('tileset', 'images/tileset.png');
+    this.game.load.image('hud', 'images/hud.png');
 
     // load audio
     this.game.load.audio('sfx:walk', 'audio/walk.wav');

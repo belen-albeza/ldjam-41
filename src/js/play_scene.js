@@ -25,11 +25,15 @@ PlayScene.create = function () {
     background: this.map.createLayer('background'),
     obstacles: this.map.createLayer('walls')
   };
-  this.mapLayers.background.resizeWorld();
 
   // create main character
   this.chara = new Character(this.game, 5, 5);
   this.game.add.existing(this.chara);
+
+  // create HUD
+  this.hud = this.game.add.group();
+  this.hud.position.set(0, this.game.world.height - 144);
+  this.hud.add(this.game.make.image(0, 0, 'hud'));
 };
 
 PlayScene.update = function () {
