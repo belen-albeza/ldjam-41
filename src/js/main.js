@@ -28,8 +28,10 @@ var PreloaderScene = {
     this.load.setPreloadSprite(this.loadingBar);
 
     // load maps
-    this.game.load.tilemap('map:00', 'data/area00.json', null,
-      Phaser.Tilemap.TILED_JSON);
+    ['00', '01'].forEach((x) => {
+      this.game.load.tilemap(`map:${x}`, `data/area${x}.json`, null,
+        Phaser.Tilemap.TILED_JSON);
+    });
 
     // load images
     this.game.load.image('background', 'images/background.png');
@@ -42,7 +44,8 @@ var PreloaderScene = {
   },
 
   create: function () {
-    this.game.state.start('play');
+    this.game.state.start('play', true, false, {
+      key: 'map:00', col: 2, row: 7});
   }
 };
 
