@@ -4,7 +4,7 @@
 const TSIZE = require('./map.js').TSIZE;
 const MAX_HEALTH = 50;
 
-function Character(game, col, row, sfx) {
+function Character(game, col, row, sfx, state) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
   this.sfx = sfx;
 
@@ -12,19 +12,38 @@ function Character(game, col, row, sfx) {
   this.animations.add('hit', [2, 1, 1, 2, 1, 1], 12);
   this.move(col, row);
 
-  this.health = MAX_HEALTH;
+  this.health = state.health || MAX_HEALTH;
   this.animations.play('idle');
 
   this.wearing = {
-    crown: this.game.make.sprite(TSIZE / 2, 9, 'crown')
+    crown: this.game.make.sprite(12, -3, 'crown'),
+    robe: this.game.make.sprite(6, 30, 'robe'),
+    scepter: this.game.make.sprite(39, 12, 'scepter')
   };
 
-  this.wearing.crown.anchor.setTo(0.5, 1);
-  this.addChild(this.wearing.crown);
+  for (let key in this.wearing) {
+    this.addChild(this.wearing[key]);
+    this.wearing[key].visible = state.wearing.includes(key);
+  }
+
+  this.wearing.scepter.animations.add('idle', [0, 1], 2, true);
+  this.wearing.scepter.play('idle');
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);
 Character.prototype.constructor = Character;
+
+Character.prototype.canWear = function (name) {
+  return name in this.wearing;
+};
+
+Character.prototype.wear = function (name) {
+  this.wearing[name].visible = true;
+};
+
+Character.prototype.isWearing = function (name) {
+  return this.wearing[name].visible;
+};
 
 Character.prototype.move = function (col, row) {
   this.x = col * TSIZE;
@@ -74,7 +93,56 @@ Character.prototype._getAttackDamage = function () {
 
 module.exports = Character;
 
-},{"./map.js":6}],2:[function(require,module,exports){
+},{"./map.js":7}],2:[function(require,module,exports){
+'use strict';
+
+const TSIZE = require('./map.js').TSIZE;
+
+function Chest(game, col, row, data, sfx) {
+  Phaser.Sprite.call(this, game, col * TSIZE, row * TSIZE, 'chest');
+  this.content = data.content;
+  this.id = data.id;
+  this.sfx = sfx;
+  this.isChest = true;
+
+  this.col = col;
+  this.row = row;
+}
+
+Chest.prototype = Object.create(Phaser.Sprite.prototype);
+Chest.prototype.constructor = Chest;
+
+Chest.prototype.open = function () {
+  this.frame = 1;
+  this.sfx.open.play();
+
+  return new Promise((resolve) => {
+    let item = this.game.make.sprite(TSIZE/2, TSIZE/2,
+      this.content);
+    item.anchor.setTo(0.5);
+    this.addChild(item);
+
+    let openTween = this.game.add.tween(item);
+    openTween.to({y: 0}, 1000, Phaser.Easing.Sinusoidal.Out);
+    let fadeTween = this.game.add.tween(this);
+    fadeTween.to({alpha: 0}, 300, Phaser.Easing.Linear.None).delay(200);
+
+    openTween.chain(fadeTween);
+    openTween.start();
+
+    fadeTween.onComplete.addOnce(() => {
+      resolve({content: this.content, id: this.id});
+      this.game.tweens.remove(openTween);
+      this.game.tweens.remove(fadeTween);
+      this.kill();
+    })
+  })
+};
+
+
+module.exports = Chest;
+
+},{"./map.js":7}],3:[function(require,module,exports){
 'use strict';
 
 const FONT = '20pt Patrick Hand';
@@ -103,7 +171,7 @@ LifeBar.prototype.setValue = function (value) {
 
 module.exports = LifeBar;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 // We create our own custom loader class extending Phaser.Loader.
@@ -144,7 +212,7 @@ CustomLoader.prototype.loadFile = function (file) {
 
 module.exports = CustomLoader;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 const MESSAGE_COUNT = 4;
@@ -194,7 +262,7 @@ Logger.prototype._updateLabels = function () {
 
 module.exports = Logger;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 const CustomLoader = require('./loader.js');
@@ -246,12 +314,16 @@ var PreloaderScene = {
     this.game.load.image('hud:logger', 'images/hud.png');
     this.game.load.image('hud:status', 'images/status.png');
     this.game.load.image('crown', 'images/crown.png');
+    this.game.load.image('robe', 'images/robe.png');
+    this.game.load.spritesheet('chest', 'images/chest.png', 48, 48);
+    this.game.load.spritesheet('scepter', 'images/scepter.png', 9, 27);
     this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
     // load audio
     this.game.load.audio('sfx:walk', 'audio/walk.wav');
     this.game.load.audio('sfx:hit', 'audio/hit.wav');
+    this.game.load.audio('sfx:chest', 'audio/chest.wav');
   },
 
   create: function () {
@@ -259,8 +331,11 @@ var PreloaderScene = {
     //   mapKey: 'map:00',
     //   character: {
     //     col: 4,
-    //     row: 10
-    //   }
+    //     row: 10,
+    //     wearing: []
+    //   },
+    //   isFirstTime: true,
+    //   pickedUp: []
     // });
 
     this.game.state.start('title');
@@ -279,7 +354,7 @@ window.onload = function () {
   game.state.start('boot');
 };
 
-},{"./loader.js":3,"./play_scene.js":7,"./title_scene.js":10,"./utils.js":11}],6:[function(require,module,exports){
+},{"./loader.js":4,"./play_scene.js":8,"./title_scene.js":11,"./utils.js":12}],7:[function(require,module,exports){
 function Map(game, key) {
   // create & setup map
   this.map = game.add.tilemap(key);
@@ -306,6 +381,26 @@ Map.prototype.spawnEnemies = function (group, sfx) {
     }
   });
 };
+
+Map.prototype.spawnItems = function (group, sfx, pickedUp) {
+  // const isWearable = (name) => name in ['crown', 'scepter', 'robe'];
+  const Chest = require('./chest.js');
+
+  this.map.objects.features.forEach((obj) => {
+    // NOTE: Tiled considers objects to have the anchor at 0, 1
+    let col = Math.floor(obj.x / Map.TSIZE);
+    let row = Math.floor(obj.y / Map.TSIZE) - 1;
+
+    if (!pickedUp.includes(`${col}:${row}`)) {
+      switch(obj.type) {
+      case 'item':
+        group.add(new Chest(this.map.game, col, row,
+          {content: obj.name, id: `${col}:${row}`}, sfx));
+        break;
+      }
+    }
+  });
+}
 
 Map.prototype.canMoveCharacter = function (col, row) {
   return this.map.getTile(col, row, this.layers.obstacles) === null;
@@ -348,7 +443,7 @@ Map.ROWS = 12;
 
 module.exports = Map;
 
-},{"./slime.js":8}],7:[function(require,module,exports){
+},{"./chest.js":2,"./slime.js":9}],8:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -383,19 +478,24 @@ PlayScene.create = function () {
   // create sfx
   this.sfx = {
     walk: this.game.add.audio('sfx:walk'),
-    hit: this.game.add.audio('sfx:hit')
+    hit: this.game.add.audio('sfx:hit'),
+    chest: this.game.add.audio('sfx:chest')
   };
 
   // create map
   this.map = new Map(this.game, this.initialState.mapKey);
+  // create items
+  this.items = this.game.add.group();
+  this.map.spawnItems(this.items, {open: this.sfx.chest}, this.initialState.pickedUp);
   // create enemies
   this.enemies = this.game.add.group();
   this.map.spawnEnemies(this.enemies, {hit: this.sfx.hit});
 
   // create main character
-  this.chara = new Character(this.game, this.initialState.character.col,
-    this.initialState.character.row, { hit: this.sfx.hit });
-  this.chara.health = this.initialState.character.health || this.chara.health;
+  this.chara = new Character(this.game,
+    this.initialState.character.col, this.initialState.character.row,
+    { hit: this.sfx.hit },
+    this.initialState.character);
 
   this.chara.events.onKilled.addOnce(() => {
     this.game.state.start('title', true, false);
@@ -412,10 +512,13 @@ PlayScene.create = function () {
   // add logger to hud
   this.logger = new Logger(this.game, 0, this.game.world.height - 144);
   this.game.add.existing(this.logger);
-  this.logger.log('Your adventure begins!');
+  if (this.initialState.isFirstTime) {
+    this.logger.log('Your adventure begins!');
+  }
 
   // game logic
   this.isTurnReady = true;
+  this.pickedUp = this.initialState.pickedUp || [];
 };
 
 PlayScene.update = function () {
@@ -425,7 +528,8 @@ PlayScene._nextTurn = function () {
   let state = {
     chara: this.chara,
     map: this.map,
-    enemies: this.enemies
+    enemies: this.enemies,
+    items: this.items
   };
 
   let promises = [];
@@ -457,9 +561,21 @@ PlayScene._moveCharacter = function (direction) {
 
   if (otherObject && otherObject.isEnemy) {
     this.chara.attack(otherObject, {cols: offsetCol, rows: offsetRow}, this.logger)
-      .then(() => {
-        this._nextTurn();
-      });
+    .then(() => {
+      this._nextTurn();
+    });
+  }
+  else if (otherObject && otherObject.isChest) {
+    otherObject.open()
+    .then((data) => {
+      this.logger.log(`You found: ${data.content}`);
+      if (this.chara.canWear(data.content)) {
+        this.logger.log(`You are now wearing: ${data.content}`);
+        this.chara.wear(data.content);
+      }
+      this.pickedUp.push(data.id);
+      this._nextTurn();
+    });
   }
   else if (this.map.canMoveCharacter(col, row) && !otherObject) {
     this.sfx.walk.play();
@@ -481,8 +597,10 @@ PlayScene._checkForExits = function (col, row) {
       character: {
         col: this.exit.col,
         row: this.exit.row,
-        health: this.chara.health
-      }
+        health: this.chara.health,
+        wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
+      },
+      pickedUp: this.pickedUp
     });
   }
   else { // in map
@@ -492,12 +610,12 @@ PlayScene._checkForExits = function (col, row) {
 };
 
 PlayScene._getObjectAt = function (col, row) {
-  return utils.getObjectAt(col, row, {enemies: this.enemies});
+  return utils.getObjectAt(col, row, {enemies: this.enemies, items: this.items});
 };
 
 module.exports = PlayScene;
 
-},{"./character.js":1,"./lifebar.js":2,"./logger.js":4,"./map.js":6,"./slime.js":8,"./stats.js":9,"./utils.js":11}],8:[function(require,module,exports){
+},{"./character.js":1,"./lifebar.js":3,"./logger.js":5,"./map.js":7,"./slime.js":9,"./stats.js":10,"./utils.js":12}],9:[function(require,module,exports){
 const TSIZE = require('./map.js').TSIZE;
 const utils = require('./utils.js');
 
@@ -621,7 +739,7 @@ Slime.prototype._chase = function (dist, state) {
 
 module.exports = Slime;
 
-},{"./map.js":6,"./utils.js":11}],9:[function(require,module,exports){
+},{"./map.js":7,"./utils.js":12}],10:[function(require,module,exports){
 const LifeBar = require('./lifebar.js');
 
 function Stats(game, x, y, data) {
@@ -644,7 +762,7 @@ Stats.prototype.constructor = Stats;
 
 module.exports = Stats;
 
-},{"./lifebar.js":2}],10:[function(require,module,exports){
+},{"./lifebar.js":3}],11:[function(require,module,exports){
 'use strict';
 const TITLE_FONT = '72pt Patrick Hand';
 const SMALL_FONT = '28pt Patrick Hand';
@@ -679,15 +797,18 @@ TitleScene.create = function () {
       mapKey: 'map:00',
       character: {
         col: 4,
-        row: 10
-      }
+        row: 10,
+        wearing: []
+      },
+      isFirstTime: true,
+      pickedUp: []
     });
   });
 }
 
 module.exports = TitleScene;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = {
   getDistance(obj, other) {
     return {
@@ -705,6 +826,12 @@ module.exports = {
       }
     });
 
+    state.items.forEachAlive((item) => {
+      if (item.col === col && item.row === row) {
+        found = item;
+      }
+    });
+
     return found;
   },
   makeImage: function (game, width, height, color) {
@@ -715,4 +842,4 @@ module.exports = {
   }
 }
 
-},{}]},{},[5]);
+},{}]},{},[6]);

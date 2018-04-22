@@ -84,6 +84,18 @@
                  "width":48,
                  "x":240,
                  "y":528
+                }, 
+                {
+                 "gid":20,
+                 "height":48,
+                 "id":17,
+                 "name":"scepter",
+                 "rotation":0,
+                 "type":"item",
+                 "visible":true,
+                 "width":48,
+                 "x":672,
+                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -91,7 +103,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":17,
+ "nextobjectid":18,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.1.4",
