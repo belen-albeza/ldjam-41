@@ -2,7 +2,7 @@
 'use strict';
 
 const TSIZE = require('./map.js').TSIZE;
-const MAX_HEALTH = 50;
+const MAX_HEALTH = 1;
 
 function Character(game, col, row, sfx, state) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
@@ -63,10 +63,9 @@ Character.prototype.move = function (col, row) {
 Character.prototype.getHit = function (amount) {
   this.animations.play('hit').onComplete.addOnce(() => {
     this.animations.play('idle');
+    this.damage(amount);
   });
   this.sfx.hit.play();
-
-  this.damage(amount);
 
   return amount;
 };
@@ -517,7 +516,16 @@ PlayScene.create = function () {
     this.initialState.character);
 
   this.chara.events.onKilled.addOnce(() => {
-    this.game.state.start('title', true, false, {isGameOver: true});
+    // disappear
+    this.isTurnReady = false;
+    this.chara.visible = true;
+    let tween = this.game.add.tween(this.chara);
+    tween.to({alpha: 0, y: this.chara.y - 128}, 1000, Phaser.Easing.Sinusoidal.In, true);
+    tween.onComplete.addOnce(() => {
+      this.game.tweens.remove(tween);
+      // go to title screen
+      this.game.state.start('title', true, false, {isGameOver: true});
+    });
   });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
@@ -560,6 +568,7 @@ PlayScene._nextTurn = function () {
 
   Promise.all(promises)
   .then(() => {
+    this.lifebar.setValue(this.chara.health);
     this.isTurnReady = true;
   })
   .catch((err) => {
@@ -692,6 +701,9 @@ Slime.prototype.act = function (state, logger) {
     if (this._canAttack(dist)) {
       let tween = this._attack(dist, state.chara, logger);
       tween.onComplete.addOnce(() => {
+        let damage = state.chara.getHit(ATTACK_DMG, logger);
+        logger.log(`${this.name} attacked and dealt ${damage} damage.`);
+
         this.game.tweens.remove(tween);
         resolve();
       });
@@ -739,9 +751,6 @@ Slime.prototype._attack = function (dist, chara, logger) {
     this.x = this.col * TSIZE;
     this.y = this.row * TSIZE;
   });
-
-  let damage = chara.getHit(ATTACK_DMG, logger);
-  logger.log(`${this.name} attacked and dealt ${damage} damage.`);
 
   return tween;
 }
@@ -815,7 +824,12 @@ TitleScene.create = function () {
     space: Phaser.KeyCode.SPACEBAR
   });
 
-  this.game.add.image(0, 0, this.data.isVictory ? 'title:empty' : 'title');
+  let titleMsg = 'Rogue Princess';
+  if (this.data.isVictory) { titleMsg = 'Crowned!'; }
+  if (this.data.isGameOver) { titleMsg = 'Game Over'; }
+
+  this.game.add.image(0, 0, (this.data.isVictory || this.data.isGameOver) ?
+    'title:empty' : 'title');
 
   let help = this.game.add.text(this.game.width / 2, this.game.height / 2 + 48,
     'Press <SPACEBAR> to start', { font: SMALL_FONT, fill: LIGHT_COLOR});
@@ -823,8 +837,7 @@ TitleScene.create = function () {
   help.setShadow(1, 1, SHADOW_COLOR, 0);
 
   let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
-      this.data.isVictory ? 'Crowned!' : 'Rogue Princess',
-      { font: TITLE_FONT, fill: LIGHT_COLOR});
+    titleMsg, { font: TITLE_FONT, fill: LIGHT_COLOR});
   title.anchor.setTo(0.5);
   title.setShadow(4, 4, SHADOW_COLOR, 0);
 
