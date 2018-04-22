@@ -45,9 +45,9 @@ Character.prototype.isWearing = function (name) {
 };
 
 Character.prototype.hasFullRegalia = function () {
-  // for (let key in this.wearing) {
-  //   if (!this.wearing[key].visible) { return false; }
-  // }
+  for (let key in this.wearing) {
+    if (!this.wearing[key].visible) { return false; }
+  }
 
   return true;
 };
