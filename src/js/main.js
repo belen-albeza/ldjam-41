@@ -44,10 +44,13 @@ var PreloaderScene = {
 
     // load images
     this.game.load.image('title', 'images/title.png');
+    this.game.load.image('title:empty', 'images/title_empty.png');
+    this.game.load.image('princess', 'images/princess.png');
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud:logger', 'images/hud.png');
     this.game.load.image('hud:status', 'images/status.png');
+    this.game.load.image('throne', 'images/door.png');
     this.game.load.image('crown', 'images/crown.png');
     this.game.load.image('robe', 'images/robe.png');
     this.game.load.spritesheet('chest', 'images/chest.png', 48, 48);
@@ -66,14 +69,14 @@ var PreloaderScene = {
     //   mapKey: 'map:00',
     //   character: {
     //     col: 4,
-    //     row: 10,
+    //     row: 1,
     //     wearing: []
     //   },
     //   isFirstTime: true,
     //   pickedUp: []
     // });
 
-    this.game.state.start('title');
+    this.game.state.start('title', true, false, {});
   }
 };
 

@@ -40,6 +40,12 @@ Map.prototype.spawnItems = function (group, sfx, pickedUp) {
         group.add(new Chest(this.map.game, col, row,
           {content: obj.name, id: `${col}:${row}`}, sfx));
         break;
+      case 'throne':
+        let door = group.create(col * Map.TSIZE, row * Map.TSIZE, 'throne');
+        door.col = col;
+        door.row = row;
+        door.isThrone = true;
+        break;
       }
     }
   });
@@ -53,7 +59,9 @@ Map.prototype.getExit = function (col, row) {
   let tile = this.map.getTile(col, row, this.layers.triggers);
 
   if (tile && tile.properties.type === 'exit') {
-    return {
+    return tile.properties.name === 'throne'
+    ? {isVictory: true}
+    : {
       to: tile.properties.name,
       col: col === 0 ? Map.COLS - 1 : (col >= Map.COLS - 1 ? 0 : col),
       row: row === 0 ? Map.ROWS - 1 : (row >= Map.ROWS - 1 ? 0 : row)

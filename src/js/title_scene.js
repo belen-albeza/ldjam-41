@@ -7,22 +7,36 @@ const LIGHT_COLOR = '#fff';
 
 const TitleScene = {};
 
+TitleScene.init = function (data) {
+  this.data = data;
+};
+
 TitleScene.create = function () {
   this.keys = this.game.input.keyboard.addKeys({
     space: Phaser.KeyCode.SPACEBAR
   });
 
-  this.game.add.image(0, 0, 'title');
-
-  let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
-    'Rogue Princess', { font: TITLE_FONT, fill: LIGHT_COLOR });
-  title.anchor.setTo(0.5);
-  title.setShadow(4, 4, SHADOW_COLOR, 0);
+  this.game.add.image(0, 0, this.data.isVictory ? 'title:empty' : 'title');
 
   let help = this.game.add.text(this.game.width / 2, this.game.height / 2 + 48,
     'Press <SPACEBAR> to start', { font: SMALL_FONT, fill: LIGHT_COLOR});
   help.anchor.setTo(0.5);
   help.setShadow(1, 1, SHADOW_COLOR, 0);
+
+  let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
+      this.data.isVictory ? 'Crowned!' : 'Rogue Princess',
+      { font: TITLE_FONT, fill: LIGHT_COLOR});
+  title.anchor.setTo(0.5);
+  title.setShadow(4, 4, SHADOW_COLOR, 0);
+
+  if (this.data.isVictory) {
+    let princess = this.game.add.image(this.game.width / 2, this.game.height / 2, 'princess');
+    princess.anchor.setTo(0.5);
+    help.y += 200;
+    title.y -= 128;
+  }
+
+
 
   this.game.add.tween(help.scale)
     .to({x: 1.25, y: 1.25}, 1000, Phaser.Easing.Sinusoidal.InOut, true, 0, -1, true);

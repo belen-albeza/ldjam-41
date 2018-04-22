@@ -44,6 +44,14 @@ Character.prototype.isWearing = function (name) {
   return this.wearing[name].visible;
 };
 
+Character.prototype.hasFullRegalia = function () {
+  // for (let key in this.wearing) {
+  //   if (!this.wearing[key].visible) { return false; }
+  // }
+
+  return true;
+};
+
 Character.prototype.move = function (col, row) {
   this.x = col * TSIZE;
   this.y = row * TSIZE;

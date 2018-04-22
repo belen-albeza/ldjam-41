@@ -52,7 +52,7 @@ PlayScene.create = function () {
     this.initialState.character);
 
   this.chara.events.onKilled.addOnce(() => {
-    this.game.state.start('title', true, false);
+    this.game.state.start('title', true, false, {isGameOver: true});
   });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
@@ -131,6 +131,16 @@ PlayScene._moveCharacter = function (direction) {
       this._nextTurn();
     });
   }
+  else if (otherObject && otherObject.isThrone) {
+    if (this.chara.hasFullRegalia()) {
+      otherObject.kill();
+      this.logger.log('Finally! Your kingdom awaits!');
+    }
+    else {
+      this.logger.log('You need to pickup your full regalia first.');
+    }
+    this._nextTurn();
+  }
   else if (this.map.canMoveCharacter(col, row) && !otherObject) {
     this.sfx.walk.play();
 
@@ -145,17 +155,22 @@ PlayScene._moveCharacter = function (direction) {
 
 PlayScene._checkForExits = function (col, row) {
   if (col < 0 || row < 0 || col >= Map.COLS || row >= Map.ROWS) { // out of map
-    // execute current exit
-    this.game.state.restart(true, false, {
-      mapKey: `map:${this.exit.to}`,
-      character: {
-        col: this.exit.col,
-        row: this.exit.row,
-        health: this.chara.health,
-        wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
-      },
-      pickedUp: this.pickedUp
-    });
+    if (this.exit.isVictory) {
+      this.game.state.start('title', true, false, {isVictory: true});
+    }
+    else {
+      // execute current exit
+      this.game.state.restart(true, false, {
+        mapKey: `map:${this.exit.to}`,
+        character: {
+          col: this.exit.col,
+          row: this.exit.row,
+          health: this.chara.health,
+          wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
+        },
+        pickedUp: this.pickedUp
+      });
+    }
   }
   else { // in map
     // check if this tile would lead to an exit
