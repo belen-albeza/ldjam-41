@@ -1,6 +1,7 @@
 'use strict';
 
 const Character = require('./character.js');
+const Slime = require('./slime.js');
 const Map = require('./map.js');
 
 let PlayScene = {};
@@ -25,6 +26,9 @@ PlayScene.create = function () {
 
   // create map
   this.map = new Map(this.game, this.mapData.key);
+  // create enemies
+  this.enemies = this.game.add.group();
+  this.map.spawnEnemies(this.enemies);
 
   // create main character
   this.chara = new Character(this.game, this.mapData.col, this.mapData.row);
@@ -41,6 +45,13 @@ PlayScene.update = function () {
 }
 
 PlayScene._nextTurn = function () {
+  let state = {
+    chara: this.chara,
+    map: this.map
+  };
+
+  this.enemies.forEach((enemy) => enemy.act(state));
+
   console.log('next turn');
 }
 
@@ -50,7 +61,7 @@ PlayScene._moveCharacter = function (direction) {
   let col = this.chara.col + offsetCol;
   let row = this.chara.row + offsetRow;
 
-  if (this.map.canMoveCharacter(col, row)) {
+  if (this.map.canMoveCharacter(col, row) && !this._getObjectAt(col, row)) {
     this.sfx.walk.play();
 
     this._checkForExits(col, row);
@@ -73,6 +84,18 @@ PlayScene._checkForExits = function (col, row) {
     this.exit = this.map.getExit(col, row);
     if (this.exit) console.log(col, row, '->', this.exit);
   }
+};
+
+PlayScene._getObjectAt = function (col, row) {
+  let found = null;
+
+  this.enemies.forEachAlive((enemy) => {
+    if (enemy.col === col && enemy.row === row) {
+      found = enemy;
+    }
+  });
+
+  return found;
 };
 
 module.exports = PlayScene;

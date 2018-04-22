@@ -5,16 +5,32 @@ function Map(game, key) {
   this.layers = {
     background: this.map.createLayer('background'),
     obstacles: this.map.createLayer('walls'),
-    features: this._makeFeaturesLayer()
+    triggers: this._makeTriggersLayer()
   };
 }
+
+Map.prototype.spawnEnemies = function (group) {
+  const Slime = require('./slime.js');
+
+  this.map.objects.features.forEach((obj) => {
+    // NOTE: Tiled considers objects to have the anchor at 0, 1
+    let col = Math.floor(obj.x / Map.TSIZE);
+    let row = Math.floor(obj.y / Map.TSIZE) - 1;
+
+    switch (obj.type) {
+    case 'slime':
+      group.add(new Slime(this.map.game, col, row));
+      break;
+    }
+  });
+};
 
 Map.prototype.canMoveCharacter = function (col, row) {
   return this.map.getTile(col, row, this.layers.obstacles) === null;
 };
 
 Map.prototype.getExit = function (col, row) {
-  let tile = this.map.getTile(col, row, this.layers.features);
+  let tile = this.map.getTile(col, row, this.layers.triggers);
 
   if (tile && tile.properties.type === 'exit') {
     return {
@@ -28,12 +44,11 @@ Map.prototype.getExit = function (col, row) {
   }
 };
 
-
-Map.prototype._makeFeaturesLayer = function () {
-  let layer = this.map.createBlankLayer('features', Map.COLS, Map.ROWS,
+Map.prototype._makeTriggersLayer = function () {
+  let layer = this.map.createBlankLayer('triggers', Map.COLS, Map.ROWS,
     Map.TSIZE, Map.TSIZE);
 
-  this.map.objects.features.forEach((obj) => {
+  this.map.objects.triggers.forEach((obj) => {
     // NOTE: Tiled considers objects to have the anchor at 0, 1
     let tile = this.map.putTileWorldXY(obj.gid, obj.x, obj.y - Map.TSIZE,
       obj.width, obj.height, layer);

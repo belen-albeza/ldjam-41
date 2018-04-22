@@ -38,6 +38,7 @@ var PreloaderScene = {
     this.game.load.image('chara', 'images/chara.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud', 'images/hud.png');
+    this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
     // load audio
     this.game.load.audio('sfx:walk', 'audio/walk.wav');

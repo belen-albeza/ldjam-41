@@ -25,7 +25,7 @@
         }, 
         {
          "draworder":"topdown",
-         "name":"features",
+         "name":"triggers",
          "objects":[
                 {
                  "gid":17,
@@ -128,8 +128,54 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "name":"features",
+         "objects":[
+                {
+                 "gid":19,
+                 "height":48,
+                 "id":13,
+                 "name":"",
+                 "rotation":0,
+                 "type":"slime",
+                 "visible":true,
+                 "width":48,
+                 "x":240,
+                 "y":336
+                }, 
+                {
+                 "gid":19,
+                 "height":48,
+                 "id":14,
+                 "name":"",
+                 "rotation":0,
+                 "type":"slime",
+                 "visible":true,
+                 "width":48,
+                 "x":624,
+                 "y":384
+                }, 
+                {
+                 "gid":19,
+                 "height":48,
+                 "id":15,
+                 "name":"",
+                 "rotation":0,
+                 "type":"slime",
+                 "visible":true,
+                 "width":48,
+                 "x":432,
+                 "y":144
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextobjectid":13,
+ "nextobjectid":16,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.1.4",
