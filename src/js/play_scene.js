@@ -43,6 +43,9 @@ PlayScene.create = function () {
   this.chara = new Character(this.game, this.mapData.col, this.mapData.row, {
     hit: this.sfx.hit
   });
+  this.chara.events.onKilled.addOnce(() => {
+    this.game.state.start('title', true, false);
+  });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
 

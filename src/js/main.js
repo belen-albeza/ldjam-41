@@ -2,6 +2,7 @@
 
 const CustomLoader = require('./loader.js');
 const PlayScene = require('./play_scene.js');
+const TitleScene = require('./title_scene.js');
 
 var BootScene = {
   init: function () {
@@ -42,6 +43,7 @@ var PreloaderScene = {
     });
 
     // load images
+    this.game.load.image('title', 'images/title.png');
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud', 'images/hud.png');
@@ -54,8 +56,9 @@ var PreloaderScene = {
   },
 
   create: function () {
-    this.game.state.start('play', true, false, {
-      key: 'map:00', col: 5, row: 7});
+    // this.game.state.start('play', true, false, {
+    //   key: 'map:00', col: 5, row: 7});
+    this.game.state.start('title');
   }
 };
 
@@ -65,6 +68,7 @@ window.onload = function () {
 
   game.state.add('boot', BootScene);
   game.state.add('preloader', PreloaderScene);
+  game.state.add('title', TitleScene);
   game.state.add('play', PlayScene);
 
   game.state.start('boot');
