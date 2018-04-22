@@ -255,15 +255,15 @@ var PreloaderScene = {
   },
 
   create: function () {
-    this.game.state.start('play', true, false, {
-      mapKey: 'map:00',
-      character: {
-        col: 4,
-        row: 10
-      }
-    });
+    // this.game.state.start('play', true, false, {
+    //   mapKey: 'map:00',
+    //   character: {
+    //     col: 4,
+    //     row: 10
+    //   }
+    // });
 
-    // this.game.state.start('title');
+    this.game.state.start('title');
   }
 };
 
@@ -467,6 +467,9 @@ PlayScene._moveCharacter = function (direction) {
     this._checkForExits(col, row);
     this.chara.move(col, row);
     this._nextTurn();
+  }
+  else {
+    this.isTurnReady = true;
   }
 };
 
