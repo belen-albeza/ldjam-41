@@ -13,95 +13,13 @@
          "y":0
         }, 
         {
-         "data":[7, 5, 6, 6, 5, 6, 5, 2, 3, 6, 7, 3, 6, 2, 6, 6, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 5, 6, 6, 2, 7, 6, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 6, 6, 4, 6, 4, 6, 0, 0, 6, 5, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 5, 5, 7, 0, 0, 3, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 0, 0, 6, 2, 4, 5, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 3, 6, 4, 6, 7, 5, 4, 6, 2, 2, 6, 3, 5, 7, 2],
+         "data":[7, 5, 6, 6, 5, 6, 5, 0, 3, 6, 7, 3, 6, 2, 6, 6, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 5, 6, 6, 2, 7, 6, 6, 0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 6, 6, 4, 6, 4, 6, 0, 0, 6, 5, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 5, 5, 7, 0, 0, 3, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 0, 0, 6, 2, 4, 5, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 5, 3, 6, 4, 6, 7, 5, 4, 6, 2, 2, 6, 3, 5, 7, 2],
          "height":12,
          "name":"walls",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
          "width":16,
-         "x":0,
-         "y":0
-        }, 
-        {
-         "draworder":"topdown",
-         "name":"triggers",
-         "objects":[
-                {
-                 "gid":17,
-                 "height":48,
-                 "id":3,
-                 "name":"01",
-                 "rotation":0,
-                 "type":"exit",
-                 "visible":true,
-                 "width":48,
-                 "x":0,
-                 "y":384
-                }, 
-                {
-                 "gid":17,
-                 "height":48,
-                 "id":4,
-                 "name":"01",
-                 "rotation":0,
-                 "type":"exit",
-                 "visible":true,
-                 "width":48,
-                 "x":0,
-                 "y":432
-                }, 
-                {
-                 "gid":17,
-                 "height":48,
-                 "id":5,
-                 "name":"02",
-                 "rotation":0,
-                 "type":"exit",
-                 "visible":true,
-                 "width":48,
-                 "x":336,
-                 "y":48
-                }, 
-                {
-                 "gid":17,
-                 "height":48,
-                 "id":6,
-                 "name":"02",
-                 "rotation":0,
-                 "type":"exit",
-                 "visible":true,
-                 "width":48,
-                 "x":384,
-                 "y":48
-                }, 
-                {
-                 "gid":17,
-                 "height":48,
-                 "id":9,
-                 "name":"03",
-                 "rotation":0,
-                 "type":"exit",
-                 "visible":true,
-                 "width":48,
-                 "x":720,
-                 "y":384
-                }, 
-                {
-                 "gid":17,
-                 "height":48,
-                 "id":10,
-                 "name":"03",
-                 "rotation":0,
-                 "type":"exit",
-                 "visible":true,
-                 "width":48,
-                 "x":720,
-                 "y":432
-                }],
-         "opacity":1,
-         "type":"objectgroup",
-         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -142,8 +60,8 @@
                  "type":"slime",
                  "visible":true,
                  "width":48,
-                 "x":432,
-                 "y":144
+                 "x":480,
+                 "y":240
                 }, 
                 {
                  "gid":20,
@@ -168,6 +86,88 @@
                  "width":48,
                  "x":96,
                  "y":192
+                }, 
+                {
+                 "gid":21,
+                 "height":48,
+                 "id":30,
+                 "name":"throne",
+                 "rotation":0,
+                 "type":"throne",
+                 "visible":true,
+                 "width":48,
+                 "x":336,
+                 "y":48
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "name":"triggers",
+         "objects":[
+                {
+                 "gid":17,
+                 "height":48,
+                 "id":3,
+                 "name":"01",
+                 "rotation":0,
+                 "type":"exit",
+                 "visible":true,
+                 "width":48,
+                 "x":0,
+                 "y":384
+                }, 
+                {
+                 "gid":17,
+                 "height":48,
+                 "id":4,
+                 "name":"01",
+                 "rotation":0,
+                 "type":"exit",
+                 "visible":true,
+                 "width":48,
+                 "x":0,
+                 "y":432
+                }, 
+                {
+                 "gid":17,
+                 "height":48,
+                 "id":9,
+                 "name":"03",
+                 "rotation":0,
+                 "type":"exit",
+                 "visible":true,
+                 "width":48,
+                 "x":720,
+                 "y":384
+                }, 
+                {
+                 "gid":17,
+                 "height":48,
+                 "id":10,
+                 "name":"03",
+                 "rotation":0,
+                 "type":"exit",
+                 "visible":true,
+                 "width":48,
+                 "x":720,
+                 "y":432
+                }, 
+                {
+                 "gid":17,
+                 "height":48,
+                 "id":31,
+                 "name":"throne",
+                 "rotation":0,
+                 "type":"exit",
+                 "visible":true,
+                 "width":48,
+                 "x":336,
+                 "y":48
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -175,7 +175,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":23,
+ "nextobjectid":32,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.1.4",

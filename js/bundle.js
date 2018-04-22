@@ -45,6 +45,14 @@ Character.prototype.isWearing = function (name) {
   return this.wearing[name].visible;
 };
 
+Character.prototype.hasFullRegalia = function () {
+  // for (let key in this.wearing) {
+  //   if (!this.wearing[key].visible) { return false; }
+  // }
+
+  return true;
+};
+
 Character.prototype.move = function (col, row) {
   this.x = col * TSIZE;
   this.y = row * TSIZE;
@@ -309,10 +317,13 @@ var PreloaderScene = {
 
     // load images
     this.game.load.image('title', 'images/title.png');
+    this.game.load.image('title:empty', 'images/title_empty.png');
+    this.game.load.image('princess', 'images/princess.png');
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud:logger', 'images/hud.png');
     this.game.load.image('hud:status', 'images/status.png');
+    this.game.load.image('throne', 'images/door.png');
     this.game.load.image('crown', 'images/crown.png');
     this.game.load.image('robe', 'images/robe.png');
     this.game.load.spritesheet('chest', 'images/chest.png', 48, 48);
@@ -331,14 +342,14 @@ var PreloaderScene = {
     //   mapKey: 'map:00',
     //   character: {
     //     col: 4,
-    //     row: 10,
+    //     row: 1,
     //     wearing: []
     //   },
     //   isFirstTime: true,
     //   pickedUp: []
     // });
 
-    this.game.state.start('title');
+    this.game.state.start('title', true, false, {});
   }
 };
 
@@ -397,6 +408,12 @@ Map.prototype.spawnItems = function (group, sfx, pickedUp) {
         group.add(new Chest(this.map.game, col, row,
           {content: obj.name, id: `${col}:${row}`}, sfx));
         break;
+      case 'throne':
+        let door = group.create(col * Map.TSIZE, row * Map.TSIZE, 'throne');
+        door.col = col;
+        door.row = row;
+        door.isThrone = true;
+        break;
       }
     }
   });
@@ -410,7 +427,9 @@ Map.prototype.getExit = function (col, row) {
   let tile = this.map.getTile(col, row, this.layers.triggers);
 
   if (tile && tile.properties.type === 'exit') {
-    return {
+    return tile.properties.name === 'throne'
+    ? {isVictory: true}
+    : {
       to: tile.properties.name,
       col: col === 0 ? Map.COLS - 1 : (col >= Map.COLS - 1 ? 0 : col),
       row: row === 0 ? Map.ROWS - 1 : (row >= Map.ROWS - 1 ? 0 : row)
@@ -498,7 +517,7 @@ PlayScene.create = function () {
     this.initialState.character);
 
   this.chara.events.onKilled.addOnce(() => {
-    this.game.state.start('title', true, false);
+    this.game.state.start('title', true, false, {isGameOver: true});
   });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
@@ -577,6 +596,16 @@ PlayScene._moveCharacter = function (direction) {
       this._nextTurn();
     });
   }
+  else if (otherObject && otherObject.isThrone) {
+    if (this.chara.hasFullRegalia()) {
+      otherObject.kill();
+      this.logger.log('Finally! Your kingdom awaits!');
+    }
+    else {
+      this.logger.log('You need to pickup your full regalia first.');
+    }
+    this._nextTurn();
+  }
   else if (this.map.canMoveCharacter(col, row) && !otherObject) {
     this.sfx.walk.play();
 
@@ -591,17 +620,22 @@ PlayScene._moveCharacter = function (direction) {
 
 PlayScene._checkForExits = function (col, row) {
   if (col < 0 || row < 0 || col >= Map.COLS || row >= Map.ROWS) { // out of map
-    // execute current exit
-    this.game.state.restart(true, false, {
-      mapKey: `map:${this.exit.to}`,
-      character: {
-        col: this.exit.col,
-        row: this.exit.row,
-        health: this.chara.health,
-        wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
-      },
-      pickedUp: this.pickedUp
-    });
+    if (this.exit.isVictory) {
+      this.game.state.start('title', true, false, {isVictory: true});
+    }
+    else {
+      // execute current exit
+      this.game.state.restart(true, false, {
+        mapKey: `map:${this.exit.to}`,
+        character: {
+          col: this.exit.col,
+          row: this.exit.row,
+          health: this.chara.health,
+          wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
+        },
+        pickedUp: this.pickedUp
+      });
+    }
   }
   else { // in map
     // check if this tile would lead to an exit
@@ -772,22 +806,36 @@ const LIGHT_COLOR = '#fff';
 
 const TitleScene = {};
 
+TitleScene.init = function (data) {
+  this.data = data;
+};
+
 TitleScene.create = function () {
   this.keys = this.game.input.keyboard.addKeys({
     space: Phaser.KeyCode.SPACEBAR
   });
 
-  this.game.add.image(0, 0, 'title');
-
-  let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
-    'Rogue Princess', { font: TITLE_FONT, fill: LIGHT_COLOR });
-  title.anchor.setTo(0.5);
-  title.setShadow(4, 4, SHADOW_COLOR, 0);
+  this.game.add.image(0, 0, this.data.isVictory ? 'title:empty' : 'title');
 
   let help = this.game.add.text(this.game.width / 2, this.game.height / 2 + 48,
     'Press <SPACEBAR> to start', { font: SMALL_FONT, fill: LIGHT_COLOR});
   help.anchor.setTo(0.5);
   help.setShadow(1, 1, SHADOW_COLOR, 0);
+
+  let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
+      this.data.isVictory ? 'Crowned!' : 'Rogue Princess',
+      { font: TITLE_FONT, fill: LIGHT_COLOR});
+  title.anchor.setTo(0.5);
+  title.setShadow(4, 4, SHADOW_COLOR, 0);
+
+  if (this.data.isVictory) {
+    let princess = this.game.add.image(this.game.width / 2, this.game.height / 2, 'princess');
+    princess.anchor.setTo(0.5);
+    help.y += 200;
+    title.y -= 128;
+  }
+
+
 
   this.game.add.tween(help.scale)
     .to({x: 1.25, y: 1.25}, 1000, Phaser.Easing.Sinusoidal.InOut, true, 0, -1, true);
