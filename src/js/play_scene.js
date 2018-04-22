@@ -8,8 +8,8 @@ const LifeBar = require('./lifebar.js');
 
 let PlayScene = {};
 
-PlayScene.init = function (mapData) {
-  this.mapData = mapData;
+PlayScene.init = function (state) {
+  this.initialState = state;
 };
 
 PlayScene.create = function () {
@@ -34,15 +34,16 @@ PlayScene.create = function () {
   };
 
   // create map
-  this.map = new Map(this.game, this.mapData.key);
+  this.map = new Map(this.game, this.initialState.mapKey);
   // create enemies
   this.enemies = this.game.add.group();
   this.map.spawnEnemies(this.enemies, {hit: this.sfx.hit});
 
   // create main character
-  this.chara = new Character(this.game, this.mapData.col, this.mapData.row, {
-    hit: this.sfx.hit
-  });
+  this.chara = new Character(this.game, this.initialState.character.col,
+    this.initialState.character.row, { hit: this.sfx.hit });
+  this.chara.health = this.initialState.character.health || this.chara.health;
+
   this.chara.events.onKilled.addOnce(() => {
     this.game.state.start('title', true, false);
   });
@@ -57,7 +58,7 @@ PlayScene.create = function () {
     'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
   txt.anchor.set(1, 1);
   this.hud.add(txt);
-  this.lifebar = new LifeBar(this.game, 10, 10, 100);
+  this.lifebar = new LifeBar(this.game, 10, 10, this.chara.health);
   this.hud.add(this.lifebar);
 
   // game logic
@@ -120,9 +121,12 @@ PlayScene._checkForExits = function (col, row) {
   if (col < 0 || row < 0 || col >= Map.COLS || row >= Map.ROWS) { // out of map
     // execute current exit
     this.game.state.restart(true, false, {
-      key: `map:${this.exit.to}`,
-      col: this.exit.col,
-      row: this.exit.row
+      mapKey: `map:${this.exit.to}`,
+      character: {
+        col: this.exit.col,
+        row: this.exit.row,
+        health: this.chara.health
+      }
     });
   }
   else { // in map

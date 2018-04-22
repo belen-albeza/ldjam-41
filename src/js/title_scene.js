@@ -29,7 +29,12 @@ TitleScene.create = function () {
 
   this.keys.space.onUp.addOnce(() => {
     this.game.state.start('play', true, false, {
-      key: 'map:00', col: 4, row: 10});
+      mapKey: 'map:00',
+      character: {
+        col: 4,
+        row: 10
+      }
+    });
   });
 }
 

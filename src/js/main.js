@@ -34,7 +34,6 @@ var PreloaderScene = {
 
     // load fonts
     this.game.load.webfont('gamja', 'Patrick Hand');
-    // this.game.load.webfont('fredoka', 'Fredoka One');
 
     // load maps
     ['00', '01'].forEach((x) => {
@@ -58,7 +57,13 @@ var PreloaderScene = {
 
   create: function () {
     this.game.state.start('play', true, false, {
-      key: 'map:00', col: 5, row: 7});
+      mapKey: 'map:00',
+      character: {
+        col: 4,
+        row: 10
+      }
+    });
+
     // this.game.state.start('title');
   }
 };
