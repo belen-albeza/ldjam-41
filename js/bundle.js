@@ -20,10 +20,52 @@ Character.prototype.move = function (col, row) {
 
 module.exports = Character;
 
-},{"./map.js":3}],2:[function(require,module,exports){
+},{"./map.js":4}],2:[function(require,module,exports){
 'use strict';
 
-var PlayScene = require('./play_scene.js');
+// We create our own custom loader class extending Phaser.Loader.
+// This new loader will support webfonts
+function CustomLoader(game) {
+  Phaser.Loader.call(this, game);
+}
+
+CustomLoader.prototype = Object.create(Phaser.Loader.prototype);
+CustomLoader.prototype.constructor = CustomLoader;
+
+// new method to load webfonts
+// this follows the structure of all of the file assets loading methods
+CustomLoader.prototype.webfont = function (key, fontName, overwrite) {
+  if (typeof overwrite === 'undefined') { overwrite = false; }
+
+  // here fontName will be stored in file's `url` property
+  // after being added to the file list
+  this.addToFileList('webfont', key, fontName);
+  return this;
+};
+
+CustomLoader.prototype.loadFile = function (file) {
+  Phaser.Loader.prototype.loadFile.call(this, file);
+
+  // we need to call asyncComplete once the file has loaded
+  if (file.type === 'webfont') {
+    var _this = this;
+    // note: file.url contains font name
+    var font = new FontFaceObserver(file.url);
+    font.load(null, 10000).then(function () {
+      _this.asyncComplete(file);
+    }, function () {
+      _this.asyncComplete(file, 'Error loading font ' + file.url);
+    });
+  }
+};
+
+module.exports = CustomLoader;
+
+},{}],3:[function(require,module,exports){
+'use strict';
+
+const CustomLoader = require('./loader.js');
+const PlayScene = require('./play_scene.js');
 
 var BootScene = {
   init: function () {
@@ -31,6 +73,9 @@ var BootScene = {
     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     this.game.scale.pageAlignHorizontally = true;
     this.game.scale.pageAlignVertically = true;
+
+    // swap Phaser.Loader for our custom one
+    this.game.load = new CustomLoader(this.game);
   },
 
   preload: function () {
@@ -49,6 +94,10 @@ var PreloaderScene = {
     this.loadingBar = this.game.add.sprite(0, 240, 'preloader_bar');
     this.loadingBar.anchor.setTo(0, 0.5);
     this.load.setPreloadSprite(this.loadingBar);
+
+    // load fonts
+    this.game.load.webfont('gamja', 'Patrick Hand');
+    // this.game.load.webfont('fredoka', 'Fredoka One');
 
     // load maps
     ['00', '01'].forEach((x) => {
@@ -84,7 +133,7 @@ window.onload = function () {
   game.state.start('boot');
 };
 
-},{"./play_scene.js":4}],3:[function(require,module,exports){
+},{"./loader.js":2,"./play_scene.js":5}],4:[function(require,module,exports){
 function Map(game, key) {
   // create & setup map
   this.map = game.add.tilemap(key);
@@ -153,7 +202,7 @@ Map.ROWS = 13;
 
 module.exports = Map;
 
-},{"./slime.js":5}],4:[function(require,module,exports){
+},{"./slime.js":6}],5:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -169,10 +218,16 @@ PlayScene.init = function (mapData) {
 
 PlayScene.create = function () {
   // create keys
-  this.keys = this.game.input.keyboard.createCursorKeys();
+  this.keys = this.game.input.keyboard.addKeys({
+    up: Phaser.KeyCode.UP,
+    down: Phaser.KeyCode.DOWN,
+    left: Phaser.KeyCode.LEFT,
+    right: Phaser.KeyCode.RIGHT,
+    wait: Phaser.KeyCode.SPACEBAR
+  });
   for (let key in this.keys) {
     this.keys[key].onDown.add(function () {
-      this._moveCharacter(key);
+      if (this.isTurnReady) { this._moveCharacter(key); }
     }, this);
   }
 
@@ -196,20 +251,40 @@ PlayScene.create = function () {
   this.hud = this.game.add.group();
   this.hud.position.set(0, this.game.world.height - 144);
   this.hud.add(this.game.make.image(0, 0, 'hud'));
+  let txt = this.game.make.text(this.hud.width - 16, this.hud.height - 8,
+    'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
+  txt.anchor.set(1, 1);
+  this.hud.add(txt);
+
+  // game logic
+  this.isTurnReady = true;
 };
 
 PlayScene.update = function () {
 }
 
 PlayScene._nextTurn = function () {
+  this.isTurnReady = false;
+
   let state = {
     chara: this.chara,
     map: this.map,
     enemies: this.enemies
   };
 
-  this.enemies.forEach((enemy) => enemy.act(state));
-  console.log('next turn');
+  let promises = [];
+  this.enemies.forEach((enemy) => {
+    promises.push(enemy.act(state));
+  });
+
+  Promise.all(promises)
+  .then(() => {
+    this.isTurnReady = true;
+    console.log('next turn');
+  })
+  .catch((err) => {
+    console.log('something went wrong', err);
+  });
 }
 
 PlayScene._moveCharacter = function (direction) {
@@ -239,7 +314,6 @@ PlayScene._checkForExits = function (col, row) {
   else { // in map
     // check if this tile would lead to an exit
     this.exit = this.map.getExit(col, row);
-    if (this.exit) console.log(col, row, '->', this.exit);
   }
 };
 
@@ -249,16 +323,17 @@ PlayScene._getObjectAt = function (col, row) {
 
 module.exports = PlayScene;
 
-},{"./character.js":1,"./map.js":3,"./slime.js":5,"./utils.js":6}],5:[function(require,module,exports){
+},{"./character.js":1,"./map.js":4,"./slime.js":6,"./utils.js":7}],6:[function(require,module,exports){
 const TSIZE = require('./map.js').TSIZE;
 const utils = require('./utils.js');
 
 function Slime(game, col, row) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
+
   this.animations.add('idle', [0, 1, 2], 6, true);
+  this.animations.play('idle');
 
   this.move(col, row);
-  this.animations.play('idle');
 }
 
 Slime.prototype = Object.create(Phaser.Sprite.prototype);
@@ -272,34 +347,24 @@ Slime.prototype.move = function (col, row) {
 };
 
 Slime.prototype.act = function (state) {
-  let dirs = [];
-  let dist = utils.getDistance(this, state.chara);
+  return new Promise((resolve, reject) => {
+    let dist = utils.getDistance(this, state.chara);
 
-  if (this._canAttack(dist)) {
-    console.log('attack!');
-  }
-  else if (this._canChase(dist)) {
-    const tryMove = (col, row) => {
-      let canMove = state.map.canMoveCharacter(col, row) &&
-        !utils.getObjectAt(col, row, state);
-      if (canMove) {
-        this.move(col, row);
-      }
-
-      return canMove;
+    if (this._canAttack(dist)) {
+      let tween = this._attack(dist);
+      tween.onComplete.addOnce(() => {
+        this.game.tweens.remove(tween);
+        resolve();
+      });
     }
-
-    let col = dist.cols !== 0 ? Math.sign(dist.cols) : 0;
-    let row = dist.rows !== 0 ? Math.sign(dist.rows) : 0;
-
-    let didMove = false;
-    if (col !== 0) {
-      didMove = tryMove(this.col + col, this.row);
+    else if (this._canChase(dist)) {
+      this._chase(dist, state);
+      resolve();
     }
-    if (!didMove && row !== 0) {
-      tryMove(this.col, this.row + row);
+    else {
+      resolve();
     }
-  }
+  });
 }
 
 Slime.prototype._canAttack = function (dist) {
@@ -313,9 +378,49 @@ Slime.prototype._canChase = function (dist) {
   return Math.abs(dist.cols) <= AREA && Math.abs(dist.rows) <= AREA;
 }
 
+Slime.prototype._attack = function (dist) {
+  let tween = this.game.add.tween(this);
+  tween.to({x: this.x + dist.cols*TSIZE, y: this.y + dist.rows * TSIZE},
+     200, Phaser.Easing.Linear.None, true, 0, 0, true);
+
+  // avoid rounding errors
+  tween.onComplete.addOnce(() => {
+    this.x = this.col * TSIZE;
+    this.y = this.row * TSIZE;
+  });
+
+  return tween;
+}
+
+Slime.prototype._chase = function (dist, state) {
+  console.log('chase');
+  const tryMove = (col, row) => {
+    let canMove = state.map.canMoveCharacter(col, row) &&
+      !utils.getObjectAt(col, row, state);
+    if (canMove) {
+      this.move(col, row);
+    }
+
+    return canMove;
+  }
+
+  let col = dist.cols !== 0 ? Math.sign(dist.cols) : 0;
+  let row = dist.rows !== 0 ? Math.sign(dist.rows) : 0;
+
+  let didMove = false;
+  if (col !== 0) {
+    didMove = tryMove(this.col + col, this.row);
+  }
+  if (!didMove && row !== 0) {
+    didMove = tryMove(this.col, this.row + row);
+  }
+
+  return didMove;
+};
+
 module.exports = Slime;
 
-},{"./map.js":3,"./utils.js":6}],6:[function(require,module,exports){
+},{"./map.js":4,"./utils.js":7}],7:[function(require,module,exports){
 module.exports = {
   getDistance(obj, other) {
     return {
@@ -337,4 +442,4 @@ module.exports = {
   }
 }
 
-},{}]},{},[2]);
+},{}]},{},[3]);
