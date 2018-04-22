@@ -14,6 +14,13 @@ function Character(game, col, row, sfx) {
 
   this.health = MAX_HEALTH;
   this.animations.play('idle');
+
+  this.wearing = {
+    crown: this.game.make.sprite(TSIZE / 2, 9, 'crown')
+  };
+
+  this.wearing.crown.anchor.setTo(0.5, 1);
+  this.addChild(this.wearing.crown);
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);
@@ -157,6 +164,7 @@ var PreloaderScene = {
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud', 'images/hud.png');
+    this.game.load.image('crown', 'images/crown.png');
     this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
@@ -518,7 +526,7 @@ TitleScene.create = function () {
 
   this.keys.space.onUp.addOnce(() => {
     this.game.state.start('play', true, false, {
-      key: 'map:00', col: 5, row: 7});
+      key: 'map:00', col: 4, row: 10});
   });
 }
 
