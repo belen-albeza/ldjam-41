@@ -28,6 +28,8 @@ function Character(game, col, row, sfx, state) {
 
   this.wearing.scepter.animations.add('idle', [0, 1], 2, true);
   this.wearing.scepter.play('idle');
+
+  this.events.onHit = new Phaser.Signal();
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);
@@ -64,7 +66,9 @@ Character.prototype.getHit = function (amount) {
   this.animations.play('hit').onComplete.addOnce(() => {
     this.animations.play('idle');
     this.damage(amount);
+    this.events.onHit.dispatch(amount);
   });
+
   this.sfx.hit.play();
 
   return amount;
@@ -334,6 +338,8 @@ var PreloaderScene = {
     this.game.load.audio('sfx:walk', 'audio/walk.wav');
     this.game.load.audio('sfx:hit', 'audio/hit.wav');
     this.game.load.audio('sfx:chest', 'audio/chest.wav');
+    this.game.load.audio('sfx:gameover', 'audio/death.wav');
+    this.game.load.audio('bgm:main', ['audio/princess.mp3', 'audio/princess.ogg']);
   },
 
   create: function () {
@@ -497,8 +503,23 @@ PlayScene.create = function () {
   this.sfx = {
     walk: this.game.add.audio('sfx:walk'),
     hit: this.game.add.audio('sfx:hit'),
-    chest: this.game.add.audio('sfx:chest')
+    chest: this.game.add.audio('sfx:chest'),
+    gameover: this.game.add.audio('sfx:gameover')
   };
+
+  if (this.initialState.isFirstTime) {
+    // create song
+    this.song = this.game.add.audio('bgm:main');
+    this.song.volume = 0.5;
+    if (this.song.isDecoded && !this.song.isPlaying) {
+      this.song.loopFull();
+    }
+    else {
+      this.song.onDecoded.addOnce(function () {
+        this.song.loopFull();
+      }, this);
+    }
+  }
 
   // create map
   this.map = new Map(this.game, this.initialState.mapKey);
@@ -519,11 +540,13 @@ PlayScene.create = function () {
     // disappear
     this.isTurnReady = false;
     this.chara.visible = true;
+    this.sfx.gameover.play();
     let tween = this.game.add.tween(this.chara);
     tween.to({alpha: 0, y: this.chara.y - 128}, 1000, Phaser.Easing.Sinusoidal.In, true);
     tween.onComplete.addOnce(() => {
       this.game.tweens.remove(tween);
       // go to title screen
+      this.song.stop();
       this.game.state.start('title', true, false, {isGameOver: true});
     });
   });
@@ -546,10 +569,16 @@ PlayScene.create = function () {
   // game logic
   this.isTurnReady = true;
   this.pickedUp = this.initialState.pickedUp || [];
+  this.chara.events.onHit.add(() => {
+    this.lifebar.setValue(this.chara.health);
+  });
 };
 
 PlayScene.update = function () {
 }
+
+PlayScene.shutdown = function () {
+};
 
 PlayScene._nextTurn = function () {
   let state = {
@@ -564,11 +593,8 @@ PlayScene._nextTurn = function () {
     promises.push(enemy.act(state, this.logger));
   });
 
-  this.lifebar.setValue(this.chara.health);
-
   Promise.all(promises)
   .then(() => {
-    this.lifebar.setValue(this.chara.health);
     this.isTurnReady = true;
   })
   .catch((err) => {
@@ -631,6 +657,7 @@ PlayScene._checkForExits = function (col, row) {
   if (col < 0 || row < 0 || col >= Map.COLS || row >= Map.ROWS) { // out of map
     if (this.exit.isVictory) {
       this.game.state.start('title', true, false, {isVictory: true});
+      if (this.song) { this.song.stop(); }
     }
     else {
       // execute current exit
