@@ -33,8 +33,23 @@ PlayScene.create = function () {
   this.sfx = {
     walk: this.game.add.audio('sfx:walk'),
     hit: this.game.add.audio('sfx:hit'),
-    chest: this.game.add.audio('sfx:chest')
+    chest: this.game.add.audio('sfx:chest'),
+    gameover: this.game.add.audio('sfx:gameover')
   };
+
+  if (this.initialState.isFirstTime) {
+    // create song
+    this.song = this.game.add.audio('bgm:main');
+    this.song.volume = 0.5;
+    if (this.song.isDecoded && !this.song.isPlaying) {
+      this.song.loopFull();
+    }
+    else {
+      this.song.onDecoded.addOnce(function () {
+        this.song.loopFull();
+      }, this);
+    }
+  }
 
   // create map
   this.map = new Map(this.game, this.initialState.mapKey);
@@ -55,11 +70,13 @@ PlayScene.create = function () {
     // disappear
     this.isTurnReady = false;
     this.chara.visible = true;
+    this.sfx.gameover.play();
     let tween = this.game.add.tween(this.chara);
     tween.to({alpha: 0, y: this.chara.y - 128}, 1000, Phaser.Easing.Sinusoidal.In, true);
     tween.onComplete.addOnce(() => {
       this.game.tweens.remove(tween);
       // go to title screen
+      this.song.stop();
       this.game.state.start('title', true, false, {isGameOver: true});
     });
   });
@@ -82,10 +99,16 @@ PlayScene.create = function () {
   // game logic
   this.isTurnReady = true;
   this.pickedUp = this.initialState.pickedUp || [];
+  this.chara.events.onHit.add(() => {
+    this.lifebar.setValue(this.chara.health);
+  });
 };
 
 PlayScene.update = function () {
 }
+
+PlayScene.shutdown = function () {
+};
 
 PlayScene._nextTurn = function () {
   let state = {
@@ -100,11 +123,8 @@ PlayScene._nextTurn = function () {
     promises.push(enemy.act(state, this.logger));
   });
 
-  this.lifebar.setValue(this.chara.health);
-
   Promise.all(promises)
   .then(() => {
-    this.lifebar.setValue(this.chara.health);
     this.isTurnReady = true;
   })
   .catch((err) => {
@@ -167,6 +187,7 @@ PlayScene._checkForExits = function (col, row) {
   if (col < 0 || row < 0 || col >= Map.COLS || row >= Map.ROWS) { // out of map
     if (this.exit.isVictory) {
       this.game.state.start('title', true, false, {isVictory: true});
+      if (this.song) { this.song.stop(); }
     }
     else {
       // execute current exit

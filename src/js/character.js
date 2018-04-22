@@ -1,7 +1,7 @@
 'use strict';
 
 const TSIZE = require('./map.js').TSIZE;
-const MAX_HEALTH = 1;
+const MAX_HEALTH = 50;
 
 function Character(game, col, row, sfx, state) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
@@ -27,6 +27,8 @@ function Character(game, col, row, sfx, state) {
 
   this.wearing.scepter.animations.add('idle', [0, 1], 2, true);
   this.wearing.scepter.play('idle');
+
+  this.events.onHit = new Phaser.Signal();
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);
@@ -63,7 +65,9 @@ Character.prototype.getHit = function (amount) {
   this.animations.play('hit').onComplete.addOnce(() => {
     this.animations.play('idle');
     this.damage(amount);
+    this.events.onHit.dispatch(amount);
   });
+
   this.sfx.hit.play();
 
   return amount;

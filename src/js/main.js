@@ -62,6 +62,8 @@ var PreloaderScene = {
     this.game.load.audio('sfx:walk', 'audio/walk.wav');
     this.game.load.audio('sfx:hit', 'audio/hit.wav');
     this.game.load.audio('sfx:chest', 'audio/chest.wav');
+    this.game.load.audio('sfx:gameover', 'audio/death.wav');
+    this.game.load.audio('bgm:main', ['audio/princess.mp3', 'audio/princess.ogg']);
   },
 
   create: function () {
