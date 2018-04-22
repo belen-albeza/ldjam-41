@@ -57,9 +57,9 @@ var PreloaderScene = {
   },
 
   create: function () {
-    // this.game.state.start('play', true, false, {
-    //   key: 'map:00', col: 5, row: 7});
-    this.game.state.start('title');
+    this.game.state.start('play', true, false, {
+      key: 'map:00', col: 5, row: 7});
+    // this.game.state.start('title');
   }
 };
 

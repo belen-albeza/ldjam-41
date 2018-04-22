@@ -37,7 +37,7 @@ PlayScene.create = function () {
   this.map = new Map(this.game, this.mapData.key);
   // create enemies
   this.enemies = this.game.add.group();
-  this.map.spawnEnemies(this.enemies);
+  this.map.spawnEnemies(this.enemies, {hit: this.sfx.hit});
 
   // create main character
   this.chara = new Character(this.game, this.mapData.col, this.mapData.row, {
@@ -99,7 +99,15 @@ PlayScene._moveCharacter = function (direction) {
   let col = this.chara.col + offsetCol;
   let row = this.chara.row + offsetRow;
 
-  if (this.map.canMoveCharacter(col, row) && !this._getObjectAt(col, row)) {
+  let otherObject = this._getObjectAt(col, row);
+
+  if (otherObject && otherObject.isEnemy) {
+    this.chara.attack(otherObject, {cols: offsetCol, rows: offsetRow})
+      .then(() => {
+        this._nextTurn();
+      });
+  }
+  else if (this.map.canMoveCharacter(col, row) && !otherObject) {
     this.sfx.walk.play();
 
     this._checkForExits(col, row);

@@ -32,13 +32,37 @@ Character.prototype.move = function (col, row) {
   this.row = row;
 };
 
-Character.prototype.hit = function (amount) {
+Character.prototype.getHit = function (amount) {
   this.animations.play('hit').onComplete.addOnce(() => {
     this.animations.play('idle');
   });
   this.sfx.hit.play();
 
   this.damage(amount);
+};
+
+Character.prototype.attack = function (enemy, dist) {
+  let tween = this.game.add.tween(this);
+  tween.to({ x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE },
+    200, Phaser.Easing.Linear.None, true, 0, 0, true);
+
+  let attackPromise = new Promise((resolve) => {
+    // avoid rounding errors
+    tween.onComplete.addOnce(() => {
+      this.x = this.col * TSIZE;
+      this.y = this.row * TSIZE;
+      this.game.tweens.remove(tween);
+      resolve();
+    });
+  });
+
+  enemy.getHit(this._getAttackDamage());
+
+  return attackPromise;
+};
+
+Character.prototype._getAttackDamage = function () {
+  return 15;
 };
 
 module.exports = Character;

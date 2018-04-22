@@ -9,7 +9,7 @@ function Map(game, key) {
   };
 }
 
-Map.prototype.spawnEnemies = function (group) {
+Map.prototype.spawnEnemies = function (group, sfx) {
   const Slime = require('./slime.js');
 
   this.map.objects.features.forEach((obj) => {
@@ -19,7 +19,7 @@ Map.prototype.spawnEnemies = function (group) {
 
     switch (obj.type) {
     case 'slime':
-      group.add(new Slime(this.map.game, col, row));
+      group.add(new Slime(this.map.game, col, row, sfx));
       break;
     }
   });

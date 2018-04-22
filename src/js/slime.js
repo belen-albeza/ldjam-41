@@ -1,15 +1,26 @@
 const TSIZE = require('./map.js').TSIZE;
 const utils = require('./utils.js');
 
+const HEALTH = 20;
 const ATTACK_DMG = 10;
 
-function Slime(game, col, row) {
+function Slime(game, col, row, sfx) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
+  this.isEnemy = true;
+  this.sfx = sfx;
 
   this.animations.add('idle', [0, 1, 2], 6, true);
+  this.animations.add('hit', [3, 2, 2, 3, 2, 2], 12);
   this.animations.play('idle');
 
+  this.health = HEALTH;
+
   this.move(col, row);
+
+  this.events.onKilled.addOnce(() => {
+    console.log('killed :(');
+    this.destroy();
+  });
 }
 
 Slime.prototype = Object.create(Phaser.Sprite.prototype);
@@ -43,6 +54,16 @@ Slime.prototype.act = function (state) {
   });
 }
 
+Slime.prototype.getHit = function (amount) {
+  this.animations.play('hit').onComplete.addOnce(() => {
+    this.animations.play('idle');
+  });
+  this.sfx.hit.play();
+
+  this.damage(amount);
+};
+
+
 Slime.prototype._canAttack = function (dist) {
   // is character a 4-neighbor?
   return (dist.cols === 0 && Math.abs(dist.rows) <= 1) ||
@@ -56,7 +77,7 @@ Slime.prototype._canChase = function (dist) {
 
 Slime.prototype._attack = function (dist, chara) {
   let tween = this.game.add.tween(this);
-  tween.to({x: this.x + dist.cols*TSIZE, y: this.y + dist.rows * TSIZE},
+  tween.to({x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE},
      200, Phaser.Easing.Linear.None, true, 0, 0, true);
 
   // avoid rounding errors
@@ -65,7 +86,7 @@ Slime.prototype._attack = function (dist, chara) {
     this.y = this.row * TSIZE;
   });
 
-  chara.hit(ATTACK_DMG);
+  chara.getHit(ATTACK_DMG);
 
   return tween;
 }
