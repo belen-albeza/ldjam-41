@@ -2,10 +2,18 @@
 'use strict';
 
 const TSIZE = require('./map.js').TSIZE;
+const MAX_HEALTH = 50;
 
-function Character(game, col, row) {
+function Character(game, col, row, sfx) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
+  this.sfx = sfx;
+
+  this.animations.add('idle', [0], 1);
+  this.animations.add('hit', [2, 1, 1, 2, 1, 1], 12);
   this.move(col, row);
+
+  this.health = MAX_HEALTH;
+  this.animations.play('idle');
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);
@@ -18,9 +26,47 @@ Character.prototype.move = function (col, row) {
   this.row = row;
 };
 
+Character.prototype.hit = function (amount) {
+  this.animations.play('hit').onComplete.addOnce(() => {
+    this.animations.play('idle');
+  });
+  this.sfx.hit.play();
+
+  this.damage(amount);
+};
+
 module.exports = Character;
 
-},{"./map.js":4}],2:[function(require,module,exports){
+},{"./map.js":5}],2:[function(require,module,exports){
+'use strict';
+
+const FONT = '20pt Patrick Hand';
+const FONT_COLOR = '#ce186a';
+
+function LifeBar(game, x, y, value) {
+  Phaser.Group.call(this, game);
+  this.position.setTo(x, y);
+
+  this._maxValue = value;
+
+  this.label = this.game.make.text(0, 0, `Life: ${value}`, {
+    font: FONT,
+    fill: FONT_COLOR
+  });
+
+  this.add(this.label);
+}
+
+LifeBar.prototype = Object.create(Phaser.Group.prototype);
+LifeBar.prototype.constructor = LifeBar;
+
+LifeBar.prototype.setValue = function (value) {
+  this.label.setText(`Life: ${value}`);
+};
+
+module.exports = LifeBar;
+
+},{}],3:[function(require,module,exports){
 'use strict';
 
 // We create our own custom loader class extending Phaser.Loader.
@@ -61,11 +107,12 @@ CustomLoader.prototype.loadFile = function (file) {
 
 module.exports = CustomLoader;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 const CustomLoader = require('./loader.js');
 const PlayScene = require('./play_scene.js');
+const TitleScene = require('./title_scene.js');
 
 var BootScene = {
   init: function () {
@@ -106,19 +153,22 @@ var PreloaderScene = {
     });
 
     // load images
+    this.game.load.image('title', 'images/title.png');
     this.game.load.image('background', 'images/background.png');
-    this.game.load.image('chara', 'images/chara.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud', 'images/hud.png');
+    this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
     // load audio
     this.game.load.audio('sfx:walk', 'audio/walk.wav');
+    this.game.load.audio('sfx:hit', 'audio/hit.wav');
   },
 
   create: function () {
-    this.game.state.start('play', true, false, {
-      key: 'map:00', col: 2, row: 7});
+    // this.game.state.start('play', true, false, {
+    //   key: 'map:00', col: 5, row: 7});
+    this.game.state.start('title');
   }
 };
 
@@ -128,12 +178,13 @@ window.onload = function () {
 
   game.state.add('boot', BootScene);
   game.state.add('preloader', PreloaderScene);
+  game.state.add('title', TitleScene);
   game.state.add('play', PlayScene);
 
   game.state.start('boot');
 };
 
-},{"./loader.js":2,"./play_scene.js":5}],4:[function(require,module,exports){
+},{"./loader.js":3,"./play_scene.js":6,"./title_scene.js":8}],5:[function(require,module,exports){
 function Map(game, key) {
   // create & setup map
   this.map = game.add.tilemap(key);
@@ -202,13 +253,14 @@ Map.ROWS = 13;
 
 module.exports = Map;
 
-},{"./slime.js":6}],5:[function(require,module,exports){
+},{"./slime.js":7}],6:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
 const Character = require('./character.js');
 const Slime = require('./slime.js');
 const Map = require('./map.js');
+const LifeBar = require('./lifebar.js');
 
 let PlayScene = {};
 
@@ -233,7 +285,8 @@ PlayScene.create = function () {
 
   // create sfx
   this.sfx = {
-    walk: this.game.add.audio('sfx:walk')
+    walk: this.game.add.audio('sfx:walk'),
+    hit: this.game.add.audio('sfx:hit')
   };
 
   // create map
@@ -243,7 +296,12 @@ PlayScene.create = function () {
   this.map.spawnEnemies(this.enemies);
 
   // create main character
-  this.chara = new Character(this.game, this.mapData.col, this.mapData.row);
+  this.chara = new Character(this.game, this.mapData.col, this.mapData.row, {
+    hit: this.sfx.hit
+  });
+  this.chara.events.onKilled.addOnce(() => {
+    this.game.state.start('title', true, false);
+  });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
 
@@ -255,6 +313,8 @@ PlayScene.create = function () {
     'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
   txt.anchor.set(1, 1);
   this.hud.add(txt);
+  this.lifebar = new LifeBar(this.game, 10, 10, 100);
+  this.hud.add(this.lifebar);
 
   // game logic
   this.isTurnReady = true;
@@ -276,6 +336,8 @@ PlayScene._nextTurn = function () {
   this.enemies.forEach((enemy) => {
     promises.push(enemy.act(state));
   });
+
+  this.lifebar.setValue(this.chara.health);
 
   Promise.all(promises)
   .then(() => {
@@ -323,9 +385,11 @@ PlayScene._getObjectAt = function (col, row) {
 
 module.exports = PlayScene;
 
-},{"./character.js":1,"./map.js":4,"./slime.js":6,"./utils.js":7}],6:[function(require,module,exports){
+},{"./character.js":1,"./lifebar.js":2,"./map.js":5,"./slime.js":7,"./utils.js":9}],7:[function(require,module,exports){
 const TSIZE = require('./map.js').TSIZE;
 const utils = require('./utils.js');
+
+const ATTACK_DMG = 10;
 
 function Slime(game, col, row) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
@@ -351,7 +415,7 @@ Slime.prototype.act = function (state) {
     let dist = utils.getDistance(this, state.chara);
 
     if (this._canAttack(dist)) {
-      let tween = this._attack(dist);
+      let tween = this._attack(dist, state.chara);
       tween.onComplete.addOnce(() => {
         this.game.tweens.remove(tween);
         resolve();
@@ -378,7 +442,7 @@ Slime.prototype._canChase = function (dist) {
   return Math.abs(dist.cols) <= AREA && Math.abs(dist.rows) <= AREA;
 }
 
-Slime.prototype._attack = function (dist) {
+Slime.prototype._attack = function (dist, chara) {
   let tween = this.game.add.tween(this);
   tween.to({x: this.x + dist.cols*TSIZE, y: this.y + dist.rows * TSIZE},
      200, Phaser.Easing.Linear.None, true, 0, 0, true);
@@ -388,6 +452,8 @@ Slime.prototype._attack = function (dist) {
     this.x = this.col * TSIZE;
     this.y = this.row * TSIZE;
   });
+
+  chara.hit(ATTACK_DMG);
 
   return tween;
 }
@@ -420,7 +486,45 @@ Slime.prototype._chase = function (dist, state) {
 
 module.exports = Slime;
 
-},{"./map.js":4,"./utils.js":7}],7:[function(require,module,exports){
+},{"./map.js":5,"./utils.js":9}],8:[function(require,module,exports){
+'use strict';
+const TITLE_FONT = '72pt Patrick Hand';
+const SMALL_FONT = '28pt Patrick Hand';
+const DARK_COLOR = '#ce186a';
+const SHADOW_COLOR = '#53034b';
+const LIGHT_COLOR = '#fff';
+
+const TitleScene = {};
+
+TitleScene.create = function () {
+  this.keys = this.game.input.keyboard.addKeys({
+    space: Phaser.KeyCode.SPACEBAR
+  });
+
+  this.game.add.image(0, 0, 'title');
+
+  let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
+    'Rogue Princess', { font: TITLE_FONT, fill: LIGHT_COLOR });
+  title.anchor.setTo(0.5);
+  title.setShadow(4, 4, SHADOW_COLOR, 0);
+
+  let help = this.game.add.text(this.game.width / 2, this.game.height / 2 + 48,
+    'Press <SPACEBAR> to start', { font: SMALL_FONT, fill: LIGHT_COLOR});
+  help.anchor.setTo(0.5);
+  help.setShadow(1, 1, SHADOW_COLOR, 0);
+
+  this.game.add.tween(help.scale)
+    .to({x: 1.25, y: 1.25}, 1000, Phaser.Easing.Sinusoidal.InOut, true, 0, -1, true);
+
+  this.keys.space.onUp.addOnce(() => {
+    this.game.state.start('play', true, false, {
+      key: 'map:00', col: 5, row: 7});
+  });
+}
+
+module.exports = TitleScene;
+
+},{}],9:[function(require,module,exports){
 module.exports = {
   getDistance(obj, other) {
     return {
@@ -442,4 +546,4 @@ module.exports = {
   }
 }
 
-},{}]},{},[3]);
+},{}]},{},[4]);
