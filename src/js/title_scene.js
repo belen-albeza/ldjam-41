@@ -16,7 +16,12 @@ TitleScene.create = function () {
     space: Phaser.KeyCode.SPACEBAR
   });
 
-  this.game.add.image(0, 0, this.data.isVictory ? 'title:empty' : 'title');
+  let titleMsg = 'Rogue Princess';
+  if (this.data.isVictory) { titleMsg = 'Crowned!'; }
+  if (this.data.isGameOver) { titleMsg = 'Game Over'; }
+
+  this.game.add.image(0, 0, (this.data.isVictory || this.data.isGameOver) ?
+    'title:empty' : 'title');
 
   let help = this.game.add.text(this.game.width / 2, this.game.height / 2 + 48,
     'Press <SPACEBAR> to start', { font: SMALL_FONT, fill: LIGHT_COLOR});
@@ -24,8 +29,7 @@ TitleScene.create = function () {
   help.setShadow(1, 1, SHADOW_COLOR, 0);
 
   let title = this.game.add.text(this.game.width / 2, this.game.height / 2 - 72,
-      this.data.isVictory ? 'Crowned!' : 'Rogue Princess',
-      { font: TITLE_FONT, fill: LIGHT_COLOR});
+    titleMsg, { font: TITLE_FONT, fill: LIGHT_COLOR});
   title.anchor.setTo(0.5);
   title.setShadow(4, 4, SHADOW_COLOR, 0);
 

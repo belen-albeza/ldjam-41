@@ -52,7 +52,16 @@ PlayScene.create = function () {
     this.initialState.character);
 
   this.chara.events.onKilled.addOnce(() => {
-    this.game.state.start('title', true, false, {isGameOver: true});
+    // disappear
+    this.isTurnReady = false;
+    this.chara.visible = true;
+    let tween = this.game.add.tween(this.chara);
+    tween.to({alpha: 0, y: this.chara.y - 128}, 1000, Phaser.Easing.Sinusoidal.In, true);
+    tween.onComplete.addOnce(() => {
+      this.game.tweens.remove(tween);
+      // go to title screen
+      this.game.state.start('title', true, false, {isGameOver: true});
+    });
   });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
@@ -95,6 +104,7 @@ PlayScene._nextTurn = function () {
 
   Promise.all(promises)
   .then(() => {
+    this.lifebar.setValue(this.chara.health);
     this.isTurnReady = true;
   })
   .catch((err) => {

@@ -40,6 +40,9 @@ Slime.prototype.act = function (state, logger) {
     if (this._canAttack(dist)) {
       let tween = this._attack(dist, state.chara, logger);
       tween.onComplete.addOnce(() => {
+        let damage = state.chara.getHit(ATTACK_DMG, logger);
+        logger.log(`${this.name} attacked and dealt ${damage} damage.`);
+
         this.game.tweens.remove(tween);
         resolve();
       });
@@ -87,9 +90,6 @@ Slime.prototype._attack = function (dist, chara, logger) {
     this.x = this.col * TSIZE;
     this.y = this.row * TSIZE;
   });
-
-  let damage = chara.getHit(ATTACK_DMG, logger);
-  logger.log(`${this.name} attacked and dealt ${damage} damage.`);
 
   return tween;
 }

@@ -1,7 +1,7 @@
 'use strict';
 
 const TSIZE = require('./map.js').TSIZE;
-const MAX_HEALTH = 50;
+const MAX_HEALTH = 1;
 
 function Character(game, col, row, sfx, state) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
@@ -62,10 +62,9 @@ Character.prototype.move = function (col, row) {
 Character.prototype.getHit = function (amount) {
   this.animations.play('hit').onComplete.addOnce(() => {
     this.animations.play('idle');
+    this.damage(amount);
   });
   this.sfx.hit.play();
-
-  this.damage(amount);
 
   return amount;
 };
