@@ -33,7 +33,8 @@ TitleScene.create = function () {
       character: {
         col: 4,
         row: 10
-      }
+      },
+      isFirstTime: true
     });
   });
 }

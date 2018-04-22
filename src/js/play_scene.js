@@ -61,7 +61,9 @@ PlayScene.create = function () {
   // add logger to hud
   this.logger = new Logger(this.game, 0, this.game.world.height - 144);
   this.game.add.existing(this.logger);
-  this.logger.log('Your adventure begins!');
+  if (this.initialState.isFirstTime) {
+    this.logger.log('Your adventure begins!');
+  }
 
   // game logic
   this.isTurnReady = true;

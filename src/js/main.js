@@ -49,6 +49,8 @@ var PreloaderScene = {
     this.game.load.image('hud:logger', 'images/hud.png');
     this.game.load.image('hud:status', 'images/status.png');
     this.game.load.image('crown', 'images/crown.png');
+    this.game.load.image('scepter', 'images/scepter.png');
+    this.game.load.image('robe', 'images/robe.png');
     this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
@@ -58,15 +60,16 @@ var PreloaderScene = {
   },
 
   create: function () {
-    // this.game.state.start('play', true, false, {
-    //   mapKey: 'map:00',
-    //   character: {
-    //     col: 4,
-    //     row: 10
-    //   }
-    // });
+    this.game.state.start('play', true, false, {
+      mapKey: 'map:00',
+      character: {
+        col: 4,
+        row: 10
+      },
+      isFirstTime: true
+    });
 
-    this.game.state.start('title');
+    // this.game.state.start('title');
   }
 };
 
