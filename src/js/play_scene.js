@@ -1,5 +1,6 @@
 'use strict';
 
+const utils = require('./utils.js');
 const Character = require('./character.js');
 const Slime = require('./slime.js');
 const Map = require('./map.js');
@@ -47,11 +48,11 @@ PlayScene.update = function () {
 PlayScene._nextTurn = function () {
   let state = {
     chara: this.chara,
-    map: this.map
+    map: this.map,
+    enemies: this.enemies
   };
 
   this.enemies.forEach((enemy) => enemy.act(state));
-
   console.log('next turn');
 }
 
@@ -87,15 +88,7 @@ PlayScene._checkForExits = function (col, row) {
 };
 
 PlayScene._getObjectAt = function (col, row) {
-  let found = null;
-
-  this.enemies.forEachAlive((enemy) => {
-    if (enemy.col === col && enemy.row === row) {
-      found = enemy;
-    }
-  });
-
-  return found;
+  return utils.getObjectAt(col, row, {enemies: this.enemies});
 };
 
 module.exports = PlayScene;
