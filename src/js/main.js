@@ -1,6 +1,7 @@
 'use strict';
 
-var PlayScene = require('./play_scene.js');
+const CustomLoader = require('./loader.js');
+const PlayScene = require('./play_scene.js');
 
 var BootScene = {
   init: function () {
@@ -8,6 +9,9 @@ var BootScene = {
     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     this.game.scale.pageAlignHorizontally = true;
     this.game.scale.pageAlignVertically = true;
+
+    // swap Phaser.Loader for our custom one
+    this.game.load = new CustomLoader(this.game);
   },
 
   preload: function () {
@@ -26,6 +30,10 @@ var PreloaderScene = {
     this.loadingBar = this.game.add.sprite(0, 240, 'preloader_bar');
     this.loadingBar.anchor.setTo(0, 0.5);
     this.load.setPreloadSprite(this.loadingBar);
+
+    // load fonts
+    this.game.load.webfont('gamja', 'Patrick Hand');
+    // this.game.load.webfont('fredoka', 'Fredoka One');
 
     // load maps
     ['00', '01'].forEach((x) => {

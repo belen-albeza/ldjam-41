@@ -3,7 +3,6 @@ const utils = require('./utils.js');
 
 function Slime(game, col, row) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
-  this.tween = this.game.add.tween(this);
 
   this.animations.add('idle', [0, 1, 2], 6, true);
   this.animations.play('idle');
@@ -22,15 +21,24 @@ Slime.prototype.move = function (col, row) {
 };
 
 Slime.prototype.act = function (state) {
-  let dirs = [];
-  let dist = utils.getDistance(this, state.chara);
+  return new Promise((resolve, reject) => {
+    let dist = utils.getDistance(this, state.chara);
 
-  if (this._canAttack(dist)) {
-    this._attack(dist);
-  }
-  else if (this._canChase(dist)) {
-    this._chase(dist, state);
-  }
+    if (this._canAttack(dist)) {
+      let tween = this._attack(dist);
+      tween.onComplete.addOnce(() => {
+        this.game.tweens.remove(tween);
+        resolve();
+      });
+    }
+    else if (this._canChase(dist)) {
+      this._chase(dist, state);
+      resolve();
+    }
+    else {
+      resolve();
+    }
+  });
 }
 
 Slime.prototype._canAttack = function (dist) {
@@ -45,11 +53,21 @@ Slime.prototype._canChase = function (dist) {
 }
 
 Slime.prototype._attack = function (dist) {
-  this.tween.to({x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE},
-    200, Phaser.Easing.Sinusoidal.InOut, true, 0, 0, true);
+  let tween = this.game.add.tween(this);
+  tween.to({x: this.x + dist.cols*TSIZE, y: this.y + dist.rows * TSIZE},
+     200, Phaser.Easing.Linear.None, true, 0, 0, true);
+
+  // avoid rounding errors
+  tween.onComplete.addOnce(() => {
+    this.x = this.col * TSIZE;
+    this.y = this.row * TSIZE;
+  });
+
+  return tween;
 }
 
 Slime.prototype._chase = function (dist, state) {
+  console.log('chase');
   const tryMove = (col, row) => {
     let canMove = state.map.canMoveCharacter(col, row) &&
       !utils.getObjectAt(col, row, state);

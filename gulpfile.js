@@ -38,9 +38,15 @@ gulp.task('browserify', bundle);
 
 // 3rd party libs that don't play nice with browserify
 gulp.task('libs', function () {
-  var dir = './node_modules/phaser-ce/build/';
-  return gulp.src(['phaser.min.js', 'phaser.map'], { cwd: dir, base: dir})
+  let dir = './node_modules/phaser-ce/build/';
+  let phaser = gulp.src(['phaser.min.js', 'phaser.map'], { cwd: dir, base: dir})
     .pipe(gulp.dest('./.tmp/js/lib/'));
+
+  dir = './node_modules/fontfaceobserver/';
+  let font = gulp.src(['fontfaceobserver.js'], {cwd: dir, base: dir})
+    .pipe(gulp.dest('./.tmp/js/lib/'));
+
+  return merge(phaser, font);
 });
 
 gulp.task('js', ['browserify', 'libs']);

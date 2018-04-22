@@ -13,10 +13,16 @@ PlayScene.init = function (mapData) {
 
 PlayScene.create = function () {
   // create keys
-  this.keys = this.game.input.keyboard.createCursorKeys();
+  this.keys = this.game.input.keyboard.addKeys({
+    up: Phaser.KeyCode.UP,
+    down: Phaser.KeyCode.DOWN,
+    left: Phaser.KeyCode.LEFT,
+    right: Phaser.KeyCode.RIGHT,
+    wait: Phaser.KeyCode.SPACEBAR
+  });
   for (let key in this.keys) {
     this.keys[key].onDown.add(function () {
-      this._moveCharacter(key);
+      if (this.isTurnReady) { this._moveCharacter(key); }
     }, this);
   }
 
@@ -40,20 +46,40 @@ PlayScene.create = function () {
   this.hud = this.game.add.group();
   this.hud.position.set(0, this.game.world.height - 144);
   this.hud.add(this.game.make.image(0, 0, 'hud'));
+  let txt = this.game.make.text(this.hud.width - 16, this.hud.height - 8,
+    'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
+  txt.anchor.set(1, 1);
+  this.hud.add(txt);
+
+  // game logic
+  this.isTurnReady = true;
 };
 
 PlayScene.update = function () {
 }
 
 PlayScene._nextTurn = function () {
+  this.isTurnReady = false;
+
   let state = {
     chara: this.chara,
     map: this.map,
     enemies: this.enemies
   };
 
-  this.enemies.forEach((enemy) => enemy.act(state));
-  console.log('next turn');
+  let promises = [];
+  this.enemies.forEach((enemy) => {
+    promises.push(enemy.act(state));
+  });
+
+  Promise.all(promises)
+  .then(() => {
+    this.isTurnReady = true;
+    console.log('next turn');
+  })
+  .catch((err) => {
+    console.log('something went wrong', err);
+  });
 }
 
 PlayScene._moveCharacter = function (direction) {
@@ -83,7 +109,6 @@ PlayScene._checkForExits = function (col, row) {
   else { // in map
     // check if this tile would lead to an exit
     this.exit = this.map.getExit(col, row);
-    if (this.exit) console.log(col, row, '->', this.exit);
   }
 };
 

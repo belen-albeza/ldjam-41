@@ -23,6 +23,7 @@
   "maxdepth": 2,
   "white": true,
   "predef": [
-    "Phaser"
+    "Phaser",
+    "FontFaceObserver"
   ]
 }
