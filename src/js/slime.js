@@ -1,6 +1,8 @@
 const TSIZE = require('./map.js').TSIZE;
 const utils = require('./utils.js');
 
+const ATTACK_DMG = 10;
+
 function Slime(game, col, row) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
 
@@ -25,7 +27,7 @@ Slime.prototype.act = function (state) {
     let dist = utils.getDistance(this, state.chara);
 
     if (this._canAttack(dist)) {
-      let tween = this._attack(dist);
+      let tween = this._attack(dist, state.chara);
       tween.onComplete.addOnce(() => {
         this.game.tweens.remove(tween);
         resolve();
@@ -52,7 +54,7 @@ Slime.prototype._canChase = function (dist) {
   return Math.abs(dist.cols) <= AREA && Math.abs(dist.rows) <= AREA;
 }
 
-Slime.prototype._attack = function (dist) {
+Slime.prototype._attack = function (dist, chara) {
   let tween = this.game.add.tween(this);
   tween.to({x: this.x + dist.cols*TSIZE, y: this.y + dist.rows * TSIZE},
      200, Phaser.Easing.Linear.None, true, 0, 0, true);
@@ -62,6 +64,8 @@ Slime.prototype._attack = function (dist) {
     this.x = this.col * TSIZE;
     this.y = this.row * TSIZE;
   });
+
+  chara.hit(ATTACK_DMG);
 
   return tween;
 }

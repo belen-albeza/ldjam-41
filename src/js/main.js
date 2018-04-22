@@ -43,18 +43,19 @@ var PreloaderScene = {
 
     // load images
     this.game.load.image('background', 'images/background.png');
-    this.game.load.image('chara', 'images/chara.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud', 'images/hud.png');
+    this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
     // load audio
     this.game.load.audio('sfx:walk', 'audio/walk.wav');
+    this.game.load.audio('sfx:hit', 'audio/hit.wav');
   },
 
   create: function () {
     this.game.state.start('play', true, false, {
-      key: 'map:00', col: 2, row: 7});
+      key: 'map:00', col: 5, row: 7});
   }
 };
 

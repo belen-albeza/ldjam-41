@@ -4,6 +4,7 @@ const utils = require('./utils.js');
 const Character = require('./character.js');
 const Slime = require('./slime.js');
 const Map = require('./map.js');
+const LifeBar = require('./lifebar.js');
 
 let PlayScene = {};
 
@@ -28,7 +29,8 @@ PlayScene.create = function () {
 
   // create sfx
   this.sfx = {
-    walk: this.game.add.audio('sfx:walk')
+    walk: this.game.add.audio('sfx:walk'),
+    hit: this.game.add.audio('sfx:hit')
   };
 
   // create map
@@ -38,7 +40,9 @@ PlayScene.create = function () {
   this.map.spawnEnemies(this.enemies);
 
   // create main character
-  this.chara = new Character(this.game, this.mapData.col, this.mapData.row);
+  this.chara = new Character(this.game, this.mapData.col, this.mapData.row, {
+    hit: this.sfx.hit
+  });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
 
@@ -50,6 +54,8 @@ PlayScene.create = function () {
     'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
   txt.anchor.set(1, 1);
   this.hud.add(txt);
+  this.lifebar = new LifeBar(this.game, 10, 10, 100);
+  this.hud.add(this.lifebar);
 
   // game logic
   this.isTurnReady = true;
@@ -71,6 +77,8 @@ PlayScene._nextTurn = function () {
   this.enemies.forEach((enemy) => {
     promises.push(enemy.act(state));
   });
+
+  this.lifebar.setValue(this.chara.health);
 
   Promise.all(promises)
   .then(() => {
