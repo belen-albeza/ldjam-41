@@ -117,6 +117,9 @@ PlayScene._moveCharacter = function (direction) {
     this.chara.move(col, row);
     this._nextTurn();
   }
+  else {
+    this.isTurnReady = true;
+  }
 };
 
 PlayScene._checkForExits = function (col, row) {
