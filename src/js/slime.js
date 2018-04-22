@@ -7,6 +7,7 @@ const ATTACK_DMG = 10;
 function Slime(game, col, row, sfx) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
   this.isEnemy = true;
+  this.name = 'Slime';
   this.sfx = sfx;
 
   this.animations.add('idle', [0, 1, 2], 6, true);
@@ -18,7 +19,6 @@ function Slime(game, col, row, sfx) {
   this.move(col, row);
 
   this.events.onKilled.addOnce(() => {
-    console.log('killed :(');
     this.destroy();
   });
 }
@@ -33,12 +33,12 @@ Slime.prototype.move = function (col, row) {
   this.row = row;
 };
 
-Slime.prototype.act = function (state) {
+Slime.prototype.act = function (state, logger) {
   return new Promise((resolve, reject) => {
     let dist = utils.getDistance(this, state.chara);
 
     if (this._canAttack(dist)) {
-      let tween = this._attack(dist, state.chara);
+      let tween = this._attack(dist, state.chara, logger);
       tween.onComplete.addOnce(() => {
         this.game.tweens.remove(tween);
         resolve();
@@ -61,6 +61,8 @@ Slime.prototype.getHit = function (amount) {
   this.sfx.hit.play();
 
   this.damage(amount);
+
+  return amount;
 };
 
 
@@ -75,7 +77,7 @@ Slime.prototype._canChase = function (dist) {
   return Math.abs(dist.cols) <= AREA && Math.abs(dist.rows) <= AREA;
 }
 
-Slime.prototype._attack = function (dist, chara) {
+Slime.prototype._attack = function (dist, chara, logger) {
   let tween = this.game.add.tween(this);
   tween.to({x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE},
      200, Phaser.Easing.Linear.None, true, 0, 0, true);
@@ -86,13 +88,13 @@ Slime.prototype._attack = function (dist, chara) {
     this.y = this.row * TSIZE;
   });
 
-  chara.getHit(ATTACK_DMG);
+  let damage = chara.getHit(ATTACK_DMG, logger);
+  logger.log(`${this.name} attacked and dealt ${damage} damage.`);
 
   return tween;
 }
 
 Slime.prototype._chase = function (dist, state) {
-  console.log('chase');
   const tryMove = (col, row) => {
     let canMove = state.map.canMoveCharacter(col, row) &&
       !utils.getObjectAt(col, row, state);

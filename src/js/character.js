@@ -39,9 +39,11 @@ Character.prototype.getHit = function (amount) {
   this.sfx.hit.play();
 
   this.damage(amount);
+
+  return amount;
 };
 
-Character.prototype.attack = function (enemy, dist) {
+Character.prototype.attack = function (enemy, dist, logger) {
   let tween = this.game.add.tween(this);
   tween.to({ x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE },
     200, Phaser.Easing.Linear.None, true, 0, 0, true);
@@ -56,7 +58,11 @@ Character.prototype.attack = function (enemy, dist) {
     });
   });
 
-  enemy.getHit(this._getAttackDamage());
+  let damage = enemy.getHit(this._getAttackDamage());
+  logger.log(`The Princess attacked ${enemy.name} and dealt ${damage} damage.`);
+  if (!enemy.alive) {
+    logger.log(`${enemy.name} died!`);
+  }
 
   return attackPromise;
 };

@@ -5,6 +5,8 @@ const Character = require('./character.js');
 const Slime = require('./slime.js');
 const Map = require('./map.js');
 const LifeBar = require('./lifebar.js');
+const Logger = require('./logger.js');
+const Status = require('./stats.js');
 
 let PlayScene = {};
 
@@ -50,16 +52,16 @@ PlayScene.create = function () {
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
 
-  // create HUD
-  this.hud = this.game.add.group();
-  this.hud.position.set(0, this.game.world.height - 144);
-  this.hud.add(this.game.make.image(0, 0, 'hud'));
-  let txt = this.game.make.text(this.hud.width - 16, this.hud.height - 8,
-    'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
-  txt.anchor.set(1, 1);
-  this.hud.add(txt);
-  this.lifebar = new LifeBar(this.game, 10, 10, this.chara.health);
-  this.hud.add(this.lifebar);
+  // add lifebar
+  this.statusBar = new Status(this.game, 0, this.game.world.height - 192,
+    {health: this.chara.health});
+  this.game.add.existing(this.statusBar);
+  this.lifebar = this.statusBar.lifebar;
+
+  // add logger to hud
+  this.logger = new Logger(this.game, 0, this.game.world.height - 144);
+  this.game.add.existing(this.logger);
+  this.logger.log('Your adventure begins!');
 
   // game logic
   this.isTurnReady = true;
@@ -69,8 +71,6 @@ PlayScene.update = function () {
 }
 
 PlayScene._nextTurn = function () {
-  this.isTurnReady = false;
-
   let state = {
     chara: this.chara,
     map: this.map,
@@ -79,7 +79,7 @@ PlayScene._nextTurn = function () {
 
   let promises = [];
   this.enemies.forEach((enemy) => {
-    promises.push(enemy.act(state));
+    promises.push(enemy.act(state, this.logger));
   });
 
   this.lifebar.setValue(this.chara.health);
@@ -87,7 +87,6 @@ PlayScene._nextTurn = function () {
   Promise.all(promises)
   .then(() => {
     this.isTurnReady = true;
-    console.log('next turn');
   })
   .catch((err) => {
     console.log('something went wrong', err);
@@ -95,6 +94,9 @@ PlayScene._nextTurn = function () {
 }
 
 PlayScene._moveCharacter = function (direction) {
+  this.isTurnReady = false;
+  // this.logger.clear();
+
   let offsetCol = {left: -1, right: 1}[direction] || 0;
   let offsetRow = {up: -1, down: 1}[direction] || 0;
   let col = this.chara.col + offsetCol;
@@ -103,7 +105,7 @@ PlayScene._moveCharacter = function (direction) {
   let otherObject = this._getObjectAt(col, row);
 
   if (otherObject && otherObject.isEnemy) {
-    this.chara.attack(otherObject, {cols: offsetCol, rows: offsetRow})
+    this.chara.attack(otherObject, {cols: offsetCol, rows: offsetRow}, this.logger)
       .then(() => {
         this._nextTurn();
       });

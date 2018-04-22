@@ -1,7 +1,7 @@
 'use strict';
 
 const FONT = '20pt Patrick Hand';
-const FONT_COLOR = '#ce186a';
+const FONT_COLOR = '#fff';
 
 function LifeBar(game, x, y, value) {
   Phaser.Group.call(this, game);

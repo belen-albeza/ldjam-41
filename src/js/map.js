@@ -62,6 +62,6 @@ Map.prototype._makeTriggersLayer = function () {
 
 Map.TSIZE = 48;
 Map.COLS = 16;
-Map.ROWS = 13;
+Map.ROWS = 12;
 
 module.exports = Map;
