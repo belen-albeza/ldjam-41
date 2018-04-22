@@ -33,22 +33,52 @@ Character.prototype.move = function (col, row) {
   this.row = row;
 };
 
-Character.prototype.hit = function (amount) {
+Character.prototype.getHit = function (amount) {
   this.animations.play('hit').onComplete.addOnce(() => {
     this.animations.play('idle');
   });
   this.sfx.hit.play();
 
   this.damage(amount);
+
+  return amount;
+};
+
+Character.prototype.attack = function (enemy, dist, logger) {
+  let tween = this.game.add.tween(this);
+  tween.to({ x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE },
+    200, Phaser.Easing.Linear.None, true, 0, 0, true);
+
+  let attackPromise = new Promise((resolve) => {
+    // avoid rounding errors
+    tween.onComplete.addOnce(() => {
+      this.x = this.col * TSIZE;
+      this.y = this.row * TSIZE;
+      this.game.tweens.remove(tween);
+      resolve();
+    });
+  });
+
+  let damage = enemy.getHit(this._getAttackDamage());
+  logger.log(`The Princess attacked ${enemy.name} and dealt ${damage} damage.`);
+  if (!enemy.alive) {
+    logger.log(`${enemy.name} died!`);
+  }
+
+  return attackPromise;
+};
+
+Character.prototype._getAttackDamage = function () {
+  return 15;
 };
 
 module.exports = Character;
 
-},{"./map.js":5}],2:[function(require,module,exports){
+},{"./map.js":6}],2:[function(require,module,exports){
 'use strict';
 
 const FONT = '20pt Patrick Hand';
-const FONT_COLOR = '#ce186a';
+const FONT_COLOR = '#fff';
 
 function LifeBar(game, x, y, value) {
   Phaser.Group.call(this, game);
@@ -117,9 +147,60 @@ module.exports = CustomLoader;
 },{}],4:[function(require,module,exports){
 'use strict';
 
+const MESSAGE_COUNT = 4;
+const STYLE = {
+  font: '20pt Patrick Hand',
+  fill: '#ce186a'
+};
+const LINE_HEIGHT = 30;
+
+function Logger(game, x, y) {
+  Phaser.Group.call(this, game);
+  this.position.setTo(x, y);
+
+  this.add(this.game.make.image(0, 0, 'hud:logger'));
+
+  this.messages = [];
+  this.messageLabels = [];
+  for (let i = 0; i < MESSAGE_COUNT; i++) {
+    let label = this.game.make.text(10, 10 + i * LINE_HEIGHT, '', STYLE);
+    label.alpha = 1 - i / MESSAGE_COUNT;
+    this.messageLabels.push(label);
+    this.add(label);
+  };
+}
+
+Logger.prototype = Object.create(Phaser.Group.prototype);
+Logger.prototype.constructor = Logger;
+
+Logger.prototype.log = function (message) {
+  console.log(message);
+
+  this.messages.unshift(message);
+  if (this.messages.length > MESSAGE_COUNT) { this.messages.pop(); }
+  this._updateLabels();
+}
+
+Logger.prototype.clear = function () {
+  this.messages = [];
+  this._updateLabels();
+}
+
+Logger.prototype._updateLabels = function () {
+  this.messageLabels.forEach((label, i) => {
+    label.setText(i < this.messages.length ? this.messages[i] : '');
+  });
+};
+
+module.exports = Logger;
+
+},{}],5:[function(require,module,exports){
+'use strict';
+
 const CustomLoader = require('./loader.js');
 const PlayScene = require('./play_scene.js');
 const TitleScene = require('./title_scene.js');
+const utils = require('./utils.js');
 
 var BootScene = {
   init: function () {
@@ -151,7 +232,6 @@ var PreloaderScene = {
 
     // load fonts
     this.game.load.webfont('gamja', 'Patrick Hand');
-    // this.game.load.webfont('fredoka', 'Fredoka One');
 
     // load maps
     ['00', '01'].forEach((x) => {
@@ -163,7 +243,8 @@ var PreloaderScene = {
     this.game.load.image('title', 'images/title.png');
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('tileset', 'images/tileset.png');
-    this.game.load.image('hud', 'images/hud.png');
+    this.game.load.image('hud:logger', 'images/hud.png');
+    this.game.load.image('hud:status', 'images/status.png');
     this.game.load.image('crown', 'images/crown.png');
     this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
@@ -174,9 +255,15 @@ var PreloaderScene = {
   },
 
   create: function () {
-    // this.game.state.start('play', true, false, {
-    //   key: 'map:00', col: 5, row: 7});
-    this.game.state.start('title');
+    this.game.state.start('play', true, false, {
+      mapKey: 'map:00',
+      character: {
+        col: 4,
+        row: 10
+      }
+    });
+
+    // this.game.state.start('title');
   }
 };
 
@@ -192,7 +279,7 @@ window.onload = function () {
   game.state.start('boot');
 };
 
-},{"./loader.js":3,"./play_scene.js":6,"./title_scene.js":8}],5:[function(require,module,exports){
+},{"./loader.js":3,"./play_scene.js":7,"./title_scene.js":10,"./utils.js":11}],6:[function(require,module,exports){
 function Map(game, key) {
   // create & setup map
   this.map = game.add.tilemap(key);
@@ -204,7 +291,7 @@ function Map(game, key) {
   };
 }
 
-Map.prototype.spawnEnemies = function (group) {
+Map.prototype.spawnEnemies = function (group, sfx) {
   const Slime = require('./slime.js');
 
   this.map.objects.features.forEach((obj) => {
@@ -214,7 +301,7 @@ Map.prototype.spawnEnemies = function (group) {
 
     switch (obj.type) {
     case 'slime':
-      group.add(new Slime(this.map.game, col, row));
+      group.add(new Slime(this.map.game, col, row, sfx));
       break;
     }
   });
@@ -257,11 +344,11 @@ Map.prototype._makeTriggersLayer = function () {
 
 Map.TSIZE = 48;
 Map.COLS = 16;
-Map.ROWS = 13;
+Map.ROWS = 12;
 
 module.exports = Map;
 
-},{"./slime.js":7}],6:[function(require,module,exports){
+},{"./slime.js":8}],7:[function(require,module,exports){
 'use strict';
 
 const utils = require('./utils.js');
@@ -269,11 +356,13 @@ const Character = require('./character.js');
 const Slime = require('./slime.js');
 const Map = require('./map.js');
 const LifeBar = require('./lifebar.js');
+const Logger = require('./logger.js');
+const Status = require('./stats.js');
 
 let PlayScene = {};
 
-PlayScene.init = function (mapData) {
-  this.mapData = mapData;
+PlayScene.init = function (state) {
+  this.initialState = state;
 };
 
 PlayScene.create = function () {
@@ -298,31 +387,32 @@ PlayScene.create = function () {
   };
 
   // create map
-  this.map = new Map(this.game, this.mapData.key);
+  this.map = new Map(this.game, this.initialState.mapKey);
   // create enemies
   this.enemies = this.game.add.group();
-  this.map.spawnEnemies(this.enemies);
+  this.map.spawnEnemies(this.enemies, {hit: this.sfx.hit});
 
   // create main character
-  this.chara = new Character(this.game, this.mapData.col, this.mapData.row, {
-    hit: this.sfx.hit
-  });
+  this.chara = new Character(this.game, this.initialState.character.col,
+    this.initialState.character.row, { hit: this.sfx.hit });
+  this.chara.health = this.initialState.character.health || this.chara.health;
+
   this.chara.events.onKilled.addOnce(() => {
     this.game.state.start('title', true, false);
   });
   this.game.add.existing(this.chara);
   this._checkForExits(this.chara.col, this.chara.row);
 
-  // create HUD
-  this.hud = this.game.add.group();
-  this.hud.position.set(0, this.game.world.height - 144);
-  this.hud.add(this.game.make.image(0, 0, 'hud'));
-  let txt = this.game.make.text(this.hud.width - 16, this.hud.height - 8,
-    'MOVE: ←↑↓→ WAIT: space', { fill: '#ce186a', font: '20pt Patrick Hand' });
-  txt.anchor.set(1, 1);
-  this.hud.add(txt);
-  this.lifebar = new LifeBar(this.game, 10, 10, 100);
-  this.hud.add(this.lifebar);
+  // add lifebar
+  this.statusBar = new Status(this.game, 0, this.game.world.height - 192,
+    {health: this.chara.health});
+  this.game.add.existing(this.statusBar);
+  this.lifebar = this.statusBar.lifebar;
+
+  // add logger to hud
+  this.logger = new Logger(this.game, 0, this.game.world.height - 144);
+  this.game.add.existing(this.logger);
+  this.logger.log('Your adventure begins!');
 
   // game logic
   this.isTurnReady = true;
@@ -332,8 +422,6 @@ PlayScene.update = function () {
 }
 
 PlayScene._nextTurn = function () {
-  this.isTurnReady = false;
-
   let state = {
     chara: this.chara,
     map: this.map,
@@ -342,7 +430,7 @@ PlayScene._nextTurn = function () {
 
   let promises = [];
   this.enemies.forEach((enemy) => {
-    promises.push(enemy.act(state));
+    promises.push(enemy.act(state, this.logger));
   });
 
   this.lifebar.setValue(this.chara.health);
@@ -350,7 +438,6 @@ PlayScene._nextTurn = function () {
   Promise.all(promises)
   .then(() => {
     this.isTurnReady = true;
-    console.log('next turn');
   })
   .catch((err) => {
     console.log('something went wrong', err);
@@ -358,12 +445,23 @@ PlayScene._nextTurn = function () {
 }
 
 PlayScene._moveCharacter = function (direction) {
+  this.isTurnReady = false;
+  // this.logger.clear();
+
   let offsetCol = {left: -1, right: 1}[direction] || 0;
   let offsetRow = {up: -1, down: 1}[direction] || 0;
   let col = this.chara.col + offsetCol;
   let row = this.chara.row + offsetRow;
 
-  if (this.map.canMoveCharacter(col, row) && !this._getObjectAt(col, row)) {
+  let otherObject = this._getObjectAt(col, row);
+
+  if (otherObject && otherObject.isEnemy) {
+    this.chara.attack(otherObject, {cols: offsetCol, rows: offsetRow}, this.logger)
+      .then(() => {
+        this._nextTurn();
+      });
+  }
+  else if (this.map.canMoveCharacter(col, row) && !otherObject) {
     this.sfx.walk.play();
 
     this._checkForExits(col, row);
@@ -376,9 +474,12 @@ PlayScene._checkForExits = function (col, row) {
   if (col < 0 || row < 0 || col >= Map.COLS || row >= Map.ROWS) { // out of map
     // execute current exit
     this.game.state.restart(true, false, {
-      key: `map:${this.exit.to}`,
-      col: this.exit.col,
-      row: this.exit.row
+      mapKey: `map:${this.exit.to}`,
+      character: {
+        col: this.exit.col,
+        row: this.exit.row,
+        health: this.chara.health
+      }
     });
   }
   else { // in map
@@ -393,19 +494,30 @@ PlayScene._getObjectAt = function (col, row) {
 
 module.exports = PlayScene;
 
-},{"./character.js":1,"./lifebar.js":2,"./map.js":5,"./slime.js":7,"./utils.js":9}],7:[function(require,module,exports){
+},{"./character.js":1,"./lifebar.js":2,"./logger.js":4,"./map.js":6,"./slime.js":8,"./stats.js":9,"./utils.js":11}],8:[function(require,module,exports){
 const TSIZE = require('./map.js').TSIZE;
 const utils = require('./utils.js');
 
+const HEALTH = 20;
 const ATTACK_DMG = 10;
 
-function Slime(game, col, row) {
+function Slime(game, col, row, sfx) {
   Phaser.Sprite.call(this, game, 0, 0, 'slime');
+  this.isEnemy = true;
+  this.name = 'Slime';
+  this.sfx = sfx;
 
   this.animations.add('idle', [0, 1, 2], 6, true);
+  this.animations.add('hit', [3, 2, 2, 3, 2, 2], 12);
   this.animations.play('idle');
 
+  this.health = HEALTH;
+
   this.move(col, row);
+
+  this.events.onKilled.addOnce(() => {
+    this.destroy();
+  });
 }
 
 Slime.prototype = Object.create(Phaser.Sprite.prototype);
@@ -418,12 +530,12 @@ Slime.prototype.move = function (col, row) {
   this.row = row;
 };
 
-Slime.prototype.act = function (state) {
+Slime.prototype.act = function (state, logger) {
   return new Promise((resolve, reject) => {
     let dist = utils.getDistance(this, state.chara);
 
     if (this._canAttack(dist)) {
-      let tween = this._attack(dist, state.chara);
+      let tween = this._attack(dist, state.chara, logger);
       tween.onComplete.addOnce(() => {
         this.game.tweens.remove(tween);
         resolve();
@@ -439,6 +551,18 @@ Slime.prototype.act = function (state) {
   });
 }
 
+Slime.prototype.getHit = function (amount) {
+  this.animations.play('hit').onComplete.addOnce(() => {
+    this.animations.play('idle');
+  });
+  this.sfx.hit.play();
+
+  this.damage(amount);
+
+  return amount;
+};
+
+
 Slime.prototype._canAttack = function (dist) {
   // is character a 4-neighbor?
   return (dist.cols === 0 && Math.abs(dist.rows) <= 1) ||
@@ -450,9 +574,9 @@ Slime.prototype._canChase = function (dist) {
   return Math.abs(dist.cols) <= AREA && Math.abs(dist.rows) <= AREA;
 }
 
-Slime.prototype._attack = function (dist, chara) {
+Slime.prototype._attack = function (dist, chara, logger) {
   let tween = this.game.add.tween(this);
-  tween.to({x: this.x + dist.cols*TSIZE, y: this.y + dist.rows * TSIZE},
+  tween.to({x: this.x + dist.cols * TSIZE, y: this.y + dist.rows * TSIZE},
      200, Phaser.Easing.Linear.None, true, 0, 0, true);
 
   // avoid rounding errors
@@ -461,13 +585,13 @@ Slime.prototype._attack = function (dist, chara) {
     this.y = this.row * TSIZE;
   });
 
-  chara.hit(ATTACK_DMG);
+  let damage = chara.getHit(ATTACK_DMG, logger);
+  logger.log(`${this.name} attacked and dealt ${damage} damage.`);
 
   return tween;
 }
 
 Slime.prototype._chase = function (dist, state) {
-  console.log('chase');
   const tryMove = (col, row) => {
     let canMove = state.map.canMoveCharacter(col, row) &&
       !utils.getObjectAt(col, row, state);
@@ -494,7 +618,30 @@ Slime.prototype._chase = function (dist, state) {
 
 module.exports = Slime;
 
-},{"./map.js":5,"./utils.js":9}],8:[function(require,module,exports){
+},{"./map.js":6,"./utils.js":11}],9:[function(require,module,exports){
+const LifeBar = require('./lifebar.js');
+
+function Stats(game, x, y, data) {
+  Phaser.Group.call(this, game);
+  this.position.setTo(x, y);
+
+  this.add(this.game.make.image(0, 0, 'hud:status'));
+
+  this.lifebar = new LifeBar(this.game, 14, 10, data.health);
+  this.add(this.lifebar);
+
+  let txt = this.game.make.text(this.width - 14, 10,
+    'MOVE: ←↑↓→ WAIT: space', { fill: '#fff', font: '20pt Patrick Hand' });
+  txt.anchor.set(1, 0);
+  this.add(txt);
+}
+
+Stats.prototype = Object.create(Phaser.Group.prototype);
+Stats.prototype.constructor = Stats;
+
+module.exports = Stats;
+
+},{"./lifebar.js":2}],10:[function(require,module,exports){
 'use strict';
 const TITLE_FONT = '72pt Patrick Hand';
 const SMALL_FONT = '28pt Patrick Hand';
@@ -526,13 +673,18 @@ TitleScene.create = function () {
 
   this.keys.space.onUp.addOnce(() => {
     this.game.state.start('play', true, false, {
-      key: 'map:00', col: 4, row: 10});
+      mapKey: 'map:00',
+      character: {
+        col: 4,
+        row: 10
+      }
+    });
   });
 }
 
 module.exports = TitleScene;
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = {
   getDistance(obj, other) {
     return {
@@ -551,7 +703,13 @@ module.exports = {
     });
 
     return found;
+  },
+  makeImage: function (game, width, height, color) {
+    let rect = game.make.bitmapData(width, height);
+    rect.ctx.fillStyle = color;
+    rect.ctx.fillRect(0, 0, width, height);
+    return rect;
   }
 }
 
-},{}]},{},[4]);
+},{}]},{},[5]);
