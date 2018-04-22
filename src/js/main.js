@@ -37,7 +37,7 @@ var PreloaderScene = {
     this.game.load.webfont('gamja', 'Patrick Hand');
 
     // load maps
-    ['00', '01'].forEach((x) => {
+    ['00', '01', '02'].forEach((x) => {
       this.game.load.tilemap(`map:${x}`, `data/area${x}.json`, null,
         Phaser.Tilemap.TILED_JSON);
     });

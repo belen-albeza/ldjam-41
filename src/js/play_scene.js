@@ -94,6 +94,7 @@ PlayScene.create = function () {
   this.game.add.existing(this.logger);
   if (this.initialState.isFirstTime) {
     this.logger.log('Your adventure begins!');
+    this.logger.log('Find your regalia and go to the throne room.');
   }
 
   // game logic

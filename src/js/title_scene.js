@@ -49,8 +49,8 @@ TitleScene.create = function () {
     this.game.state.start('play', true, false, {
       mapKey: 'map:00',
       character: {
-        col: 4,
-        row: 10,
+        col: 7,
+        row: 2,
         wearing: []
       },
       isFirstTime: true,
