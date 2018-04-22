@@ -25,7 +25,7 @@ Map.prototype.spawnEnemies = function (group, sfx) {
   });
 };
 
-Map.prototype.spawnItems = function (group, sfx) {
+Map.prototype.spawnItems = function (group, sfx, pickedUp) {
   // const isWearable = (name) => name in ['crown', 'scepter', 'robe'];
   const Chest = require('./chest.js');
 
@@ -34,12 +34,15 @@ Map.prototype.spawnItems = function (group, sfx) {
     let col = Math.floor(obj.x / Map.TSIZE);
     let row = Math.floor(obj.y / Map.TSIZE) - 1;
 
-    switch(obj.type) {
-    case 'item':
-      group.add(new Chest(this.map.game, col, row, obj.name, sfx));
-      break;
+    if (!pickedUp.includes(`${col}:${row}`)) {
+      switch(obj.type) {
+      case 'item':
+        group.add(new Chest(this.map.game, col, row,
+          {content: obj.name, id: `${col}:${row}`}, sfx));
+        break;
+      }
     }
-  })
+  });
 }
 
 Map.prototype.canMoveCharacter = function (col, row) {

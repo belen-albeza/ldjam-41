@@ -2,9 +2,10 @@
 
 const TSIZE = require('./map.js').TSIZE;
 
-function Chest(game, col, row, content, sfx) {
+function Chest(game, col, row, data, sfx) {
   Phaser.Sprite.call(this, game, col * TSIZE, row * TSIZE, 'chest');
-  this.content = content;
+  this.content = data.content;
+  this.id = data.id;
   this.sfx = sfx;
   this.isChest = true;
 
@@ -34,7 +35,7 @@ Chest.prototype.open = function () {
     openTween.start();
 
     fadeTween.onComplete.addOnce(() => {
-      resolve(this.content);
+      resolve({content: this.content, id: this.id});
       this.game.tweens.remove(openTween);
       this.game.tweens.remove(fadeTween);
       this.kill();

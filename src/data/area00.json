@@ -166,20 +166,8 @@
                  "type":"item",
                  "visible":true,
                  "width":48,
-                 "x":384,
-                 "y":528
-                }, 
-                {
-                 "gid":20,
-                 "height":48,
-                 "id":22,
-                 "name":"scepter",
-                 "rotation":0,
-                 "type":"item",
-                 "visible":true,
-                 "width":48,
-                 "x":240,
-                 "y":528
+                 "x":96,
+                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",

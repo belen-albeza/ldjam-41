@@ -35,7 +35,8 @@ TitleScene.create = function () {
         row: 10,
         wearing: []
       },
-      isFirstTime: true
+      isFirstTime: true,
+      pickedUp: []
     });
   });
 }

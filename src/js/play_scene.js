@@ -40,7 +40,7 @@ PlayScene.create = function () {
   this.map = new Map(this.game, this.initialState.mapKey);
   // create items
   this.items = this.game.add.group();
-  this.map.spawnItems(this.items, {open: this.sfx.chest});
+  this.map.spawnItems(this.items, {open: this.sfx.chest}, this.initialState.pickedUp);
   // create enemies
   this.enemies = this.game.add.group();
   this.map.spawnEnemies(this.enemies, {hit: this.sfx.hit});
@@ -72,6 +72,7 @@ PlayScene.create = function () {
 
   // game logic
   this.isTurnReady = true;
+  this.pickedUp = this.initialState.pickedUp || [];
 };
 
 PlayScene.update = function () {
@@ -120,12 +121,13 @@ PlayScene._moveCharacter = function (direction) {
   }
   else if (otherObject && otherObject.isChest) {
     otherObject.open()
-    .then((content) => {
-      this.logger.log(`You found: ${content}`);
-      if (this.chara.canWear(content)) {
-        this.logger.log(`You are now wearing: ${content}`);
-        this.chara.wear(content);
+    .then((data) => {
+      this.logger.log(`You found: ${data.content}`);
+      if (this.chara.canWear(data.content)) {
+        this.logger.log(`You are now wearing: ${data.content}`);
+        this.chara.wear(data.content);
       }
+      this.pickedUp.push(data.id);
       this._nextTurn();
     });
   }
@@ -151,7 +153,8 @@ PlayScene._checkForExits = function (col, row) {
         row: this.exit.row,
         health: this.chara.health,
         wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
-      }
+      },
+      pickedUp: this.pickedUp
     });
   }
   else { // in map

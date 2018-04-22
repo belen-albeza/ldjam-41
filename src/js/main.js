@@ -62,17 +62,18 @@ var PreloaderScene = {
   },
 
   create: function () {
-    this.game.state.start('play', true, false, {
-      mapKey: 'map:00',
-      character: {
-        col: 4,
-        row: 10,
-        wearing: []
-      },
-      isFirstTime: true
-    });
+    // this.game.state.start('play', true, false, {
+    //   mapKey: 'map:00',
+    //   character: {
+    //     col: 4,
+    //     row: 10,
+    //     wearing: []
+    //   },
+    //   isFirstTime: true,
+    //   pickedUp: []
+    // });
 
-    // this.game.state.start('title');
+    this.game.state.start('title');
   }
 };
 
