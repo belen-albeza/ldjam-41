@@ -144,6 +144,42 @@
                  "width":48,
                  "x":432,
                  "y":144
+                }, 
+                {
+                 "gid":20,
+                 "height":48,
+                 "id":16,
+                 "name":"crown",
+                 "rotation":0,
+                 "type":"item",
+                 "visible":true,
+                 "width":48,
+                 "x":48,
+                 "y":528
+                }, 
+                {
+                 "gid":20,
+                 "height":48,
+                 "id":18,
+                 "name":"robe",
+                 "rotation":0,
+                 "type":"item",
+                 "visible":true,
+                 "width":48,
+                 "x":384,
+                 "y":528
+                }, 
+                {
+                 "gid":20,
+                 "height":48,
+                 "id":22,
+                 "name":"scepter",
+                 "rotation":0,
+                 "type":"item",
+                 "visible":true,
+                 "width":48,
+                 "x":240,
+                 "y":528
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -151,7 +187,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":16,
+ "nextobjectid":23,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.1.4",

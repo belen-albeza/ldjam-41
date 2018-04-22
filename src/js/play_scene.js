@@ -32,19 +32,24 @@ PlayScene.create = function () {
   // create sfx
   this.sfx = {
     walk: this.game.add.audio('sfx:walk'),
-    hit: this.game.add.audio('sfx:hit')
+    hit: this.game.add.audio('sfx:hit'),
+    chest: this.game.add.audio('sfx:chest')
   };
 
   // create map
   this.map = new Map(this.game, this.initialState.mapKey);
+  // create items
+  this.items = this.game.add.group();
+  this.map.spawnItems(this.items, {open: this.sfx.chest});
   // create enemies
   this.enemies = this.game.add.group();
   this.map.spawnEnemies(this.enemies, {hit: this.sfx.hit});
 
   // create main character
-  this.chara = new Character(this.game, this.initialState.character.col,
-    this.initialState.character.row, { hit: this.sfx.hit });
-  this.chara.health = this.initialState.character.health || this.chara.health;
+  this.chara = new Character(this.game,
+    this.initialState.character.col, this.initialState.character.row,
+    { hit: this.sfx.hit },
+    this.initialState.character);
 
   this.chara.events.onKilled.addOnce(() => {
     this.game.state.start('title', true, false);
@@ -76,7 +81,8 @@ PlayScene._nextTurn = function () {
   let state = {
     chara: this.chara,
     map: this.map,
-    enemies: this.enemies
+    enemies: this.enemies,
+    items: this.items
   };
 
   let promises = [];
@@ -108,9 +114,20 @@ PlayScene._moveCharacter = function (direction) {
 
   if (otherObject && otherObject.isEnemy) {
     this.chara.attack(otherObject, {cols: offsetCol, rows: offsetRow}, this.logger)
-      .then(() => {
-        this._nextTurn();
-      });
+    .then(() => {
+      this._nextTurn();
+    });
+  }
+  else if (otherObject && otherObject.isChest) {
+    otherObject.open()
+    .then((content) => {
+      this.logger.log(`You found: ${content}`);
+      if (this.chara.canWear(content)) {
+        this.logger.log(`You are now wearing: ${content}`);
+        this.chara.wear(content);
+      }
+      this._nextTurn();
+    });
   }
   else if (this.map.canMoveCharacter(col, row) && !otherObject) {
     this.sfx.walk.play();
@@ -132,7 +149,8 @@ PlayScene._checkForExits = function (col, row) {
       character: {
         col: this.exit.col,
         row: this.exit.row,
-        health: this.chara.health
+        health: this.chara.health,
+        wearing: Object.keys(this.chara.wearing).filter(x => this.chara.isWearing(x))
       }
     });
   }
@@ -143,7 +161,7 @@ PlayScene._checkForExits = function (col, row) {
 };
 
 PlayScene._getObjectAt = function (col, row) {
-  return utils.getObjectAt(col, row, {enemies: this.enemies});
+  return utils.getObjectAt(col, row, {enemies: this.enemies, items: this.items});
 };
 
 module.exports = PlayScene;

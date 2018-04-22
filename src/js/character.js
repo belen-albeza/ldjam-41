@@ -3,7 +3,7 @@
 const TSIZE = require('./map.js').TSIZE;
 const MAX_HEALTH = 50;
 
-function Character(game, col, row, sfx) {
+function Character(game, col, row, sfx, state) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
   this.sfx = sfx;
 
@@ -11,19 +11,38 @@ function Character(game, col, row, sfx) {
   this.animations.add('hit', [2, 1, 1, 2, 1, 1], 12);
   this.move(col, row);
 
-  this.health = MAX_HEALTH;
+  this.health = state.health || MAX_HEALTH;
   this.animations.play('idle');
 
   this.wearing = {
-    crown: this.game.make.sprite(TSIZE / 2, 9, 'crown')
+    crown: this.game.make.sprite(12, -3, 'crown'),
+    robe: this.game.make.sprite(6, 30, 'robe'),
+    scepter: this.game.make.sprite(39, 12, 'scepter')
   };
 
-  this.wearing.crown.anchor.setTo(0.5, 1);
-  this.addChild(this.wearing.crown);
+  for (let key in this.wearing) {
+    this.addChild(this.wearing[key]);
+    this.wearing[key].visible = state.wearing.includes(key);
+  }
+
+  this.wearing.scepter.animations.add('idle', [0, 1], 2, true);
+  this.wearing.scepter.play('idle');
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);
 Character.prototype.constructor = Character;
+
+Character.prototype.canWear = function (name) {
+  return name in this.wearing;
+};
+
+Character.prototype.wear = function (name) {
+  this.wearing[name].visible = true;
+};
+
+Character.prototype.isWearing = function (name) {
+  return this.wearing[name].visible;
+};
 
 Character.prototype.move = function (col, row) {
   this.x = col * TSIZE;

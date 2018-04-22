@@ -49,14 +49,16 @@ var PreloaderScene = {
     this.game.load.image('hud:logger', 'images/hud.png');
     this.game.load.image('hud:status', 'images/status.png');
     this.game.load.image('crown', 'images/crown.png');
-    this.game.load.image('scepter', 'images/scepter.png');
     this.game.load.image('robe', 'images/robe.png');
+    this.game.load.spritesheet('chest', 'images/chest.png', 48, 48);
+    this.game.load.spritesheet('scepter', 'images/scepter.png', 9, 27);
     this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 
     // load audio
     this.game.load.audio('sfx:walk', 'audio/walk.wav');
     this.game.load.audio('sfx:hit', 'audio/hit.wav');
+    this.game.load.audio('sfx:chest', 'audio/chest.wav');
   },
 
   create: function () {
@@ -64,7 +66,8 @@ var PreloaderScene = {
       mapKey: 'map:00',
       character: {
         col: 4,
-        row: 10
+        row: 10,
+        wearing: []
       },
       isFirstTime: true
     });

@@ -32,7 +32,8 @@ TitleScene.create = function () {
       mapKey: 'map:00',
       character: {
         col: 4,
-        row: 10
+        row: 10,
+        wearing: []
       },
       isFirstTime: true
     });

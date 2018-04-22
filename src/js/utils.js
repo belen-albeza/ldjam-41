@@ -15,6 +15,12 @@ module.exports = {
       }
     });
 
+    state.items.forEachAlive((item) => {
+      if (item.col === col && item.row === row) {
+        found = item;
+      }
+    });
+
     return found;
   },
   makeImage: function (game, width, height, color) {

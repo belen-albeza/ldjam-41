@@ -25,6 +25,23 @@ Map.prototype.spawnEnemies = function (group, sfx) {
   });
 };
 
+Map.prototype.spawnItems = function (group, sfx) {
+  // const isWearable = (name) => name in ['crown', 'scepter', 'robe'];
+  const Chest = require('./chest.js');
+
+  this.map.objects.features.forEach((obj) => {
+    // NOTE: Tiled considers objects to have the anchor at 0, 1
+    let col = Math.floor(obj.x / Map.TSIZE);
+    let row = Math.floor(obj.y / Map.TSIZE) - 1;
+
+    switch(obj.type) {
+    case 'item':
+      group.add(new Chest(this.map.game, col, row, obj.name, sfx));
+      break;
+    }
+  })
+}
+
 Map.prototype.canMoveCharacter = function (col, row) {
   return this.map.getTile(col, row, this.layers.obstacles) === null;
 };
