@@ -13,6 +13,13 @@ function Character(game, col, row, sfx) {
 
   this.health = MAX_HEALTH;
   this.animations.play('idle');
+
+  this.wearing = {
+    crown: this.game.make.sprite(TSIZE / 2, 9, 'crown')
+  };
+
+  this.wearing.crown.anchor.setTo(0.5, 1);
+  this.addChild(this.wearing.crown);
 }
 
 Character.prototype = Object.create(Phaser.Sprite.prototype);

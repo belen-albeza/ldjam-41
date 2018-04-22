@@ -47,6 +47,7 @@ var PreloaderScene = {
     this.game.load.image('background', 'images/background.png');
     this.game.load.image('tileset', 'images/tileset.png');
     this.game.load.image('hud', 'images/hud.png');
+    this.game.load.image('crown', 'images/crown.png');
     this.game.load.spritesheet('chara', 'images/chara.png', 48, 48);
     this.game.load.spritesheet('slime', 'images/slime.png', 48, 48);
 

@@ -29,7 +29,7 @@ TitleScene.create = function () {
 
   this.keys.space.onUp.addOnce(() => {
     this.game.state.start('play', true, false, {
-      key: 'map:00', col: 5, row: 7});
+      key: 'map:00', col: 4, row: 10});
   });
 }
 
