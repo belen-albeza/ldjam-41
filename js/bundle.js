@@ -2,7 +2,7 @@
 'use strict';
 
 const TSIZE = require('./map.js').TSIZE;
-const MAX_HEALTH = 1;
+const MAX_HEALTH = 50;
 
 function Character(game, col, row, sfx, state) {
   Phaser.Sprite.call(this, game, 0, 0, 'chara');
